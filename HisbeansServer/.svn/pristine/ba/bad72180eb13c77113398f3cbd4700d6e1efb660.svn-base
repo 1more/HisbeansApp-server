@@ -1,0 +1,55 @@
+package ghost.android.hisbeans;
+
+import java.util.*;
+import javax.mail.*;
+import javax.mail.internet.*;
+
+
+public class SMTPMailSendManager {
+	private static final String emailHost = GlobalVariables.ADMIN_EMAIL_HOST;
+	private static final String emailId = GlobalVariables.ADMIN_EMAIL_ID;
+	private static final String emailPw = GlobalVariables.ADMIN_EMAIL_PASSWORD;
+
+	public void sendEmail(String from, String to, String subject, String content) {
+		Properties props = new Properties();
+		props.put("mail.smtp.starttls.enable", "true");
+		props.put("mail.smtp.host", emailHost);
+		props.put("mail.smtp.auth", "true");                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
+		EmailAuthenticator authenticator = new EmailAuthenticator(emailId,
+				emailPw);
+
+		Session session = Session.getInstance(props, authenticator);
+
+		try {
+			Message msg = new MimeMessage(session);
+			msg.setFrom(new InternetAddress(from));
+
+			msg.setRecipients(Message.RecipientType.TO,
+					InternetAddress.parse(to));
+
+			msg.setSubject(subject);
+			msg.setContent(content, "text/html; charset=EUC-KR");
+			msg.setSentDate(new Date());
+			Transport.send(msg);
+
+		} catch (MessagingException e) {
+			e.printStackTrace();
+		}
+
+	}
+
+	class EmailAuthenticator extends Authenticator {
+		private String id;
+		private String pw;
+
+		public EmailAuthenticator(String id, String pw) {
+			this.id = id;
+			this.pw = pw;
+		}
+
+		protected PasswordAuthentication getPasswordAuthentication() {
+			return new PasswordAuthentication(id, pw);
+		}
+
+	}
+}

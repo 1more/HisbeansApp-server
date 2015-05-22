@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+						http://www.springframework.org/schema/beans/spring-beans.xsd
+						http://www.springframework.org/schema/context 
+						http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+
+	<!-- Root Context: defines shared resources visible to all other web components -->
+	<context:annotation-config />	
+	
+	<bean id="userService" class="ghost.android.hisbeans.user.UserServiceImpl">
+		<property name="userDao" ref="userDao" />
+		<property name="coffeeStampDao" ref="coffeeStampDao"/>
+	</bean>
+	
+	<bean id="userDao" class="ghost.android.hisbeans.user.UserDaoJdbc">
+		<property name="sqlSession" ref="sqlSession" />
+	</bean>
+	
+	<bean id="coffeeStampService" class="ghost.android.hisbeans.coffeestamp.CoffeeStampServiceImpl">
+		<property name="coffeeStampDao" ref="coffeeStampDao"/>
+	</bean>
+	
+	<bean id="coffeeStampDao" class="ghost.android.hisbeans.coffeestamp.CoffeeStampDaoJdbc">
+		<property name="sqlSession" ref="sqlSession" />
+	</bean>
+	
+	<bean id="noticeBoardService" class="ghost.android.hisbeans.noticeboard.NoticeBoardServiceImpl">
+		<property name="noticeBoardDao" ref="noticeBoardDao" />
+	</bean>
+	
+	<bean id="noticeBoardDao" class="ghost.android.hisbeans.noticeboard.NoticeBoardDaoJdbc">
+		<property name="sqlSession" ref="sqlSession" />
+	</bean>
+	
+	<bean id="presentCardService" class="ghost.android.hisbeans.presentcard.PresentCardServiceImpl">
+		<property name="presentCardDao" ref="presentCardDao" />
+	</bean>
+	
+	<bean id="presentCardDao" class="ghost.android.hisbeans.presentcard.PresentCardDaoJdbc">
+		<property name="sqlSession" ref="sqlSession" />
+	</bean>
+	
+    <bean id="settingService" class="ghost.android.hisbeans.setting.SettingServiceImpl">
+		<property name="settingDao" ref="settingDao" />
+	</bean>
+	
+	<bean id="settingDao" class="ghost.android.hisbeans.setting.SettingDaoJdbc">
+		<property name="sqlSession" ref="sqlSession" />
+	</bean>	
+</beans>

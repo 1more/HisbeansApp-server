@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ghost.android.hisbeans.presentcard">
+
+	<select id="getPresentCardIndex" resultType="int">
+		SELECT `seq` 
+		FROM xe_sequence
+		ORDER BY `seq` DESC
+		LIMIT 1
+	</select>
+	
+	<select id="getAllMenus" resultType="ghost.android.hisbeans.presentcard.PresentCardMenuModel">
+		SELECT *
+		FROM menus
+	</select>
+	
+	<select id="getPresentCardsById" parameterType="string" resultType="ghost.android.hisbeans.presentcard.PresentCardModel">
+		SELECT *
+		FROM xe_giftcards
+		WHERE senderId = #{id}
+	</select>
+
+	<select id="getPresentCardsByPhoneNum" parameterType="string" resultType="ghost.android.hisbeans.presentcard.PresentCardModel">
+		SELECT *
+		FROM xe_giftcards
+		WHERE receiverPhoneNum = #{phoneNum}
+	</select>
+
+	<select id="getPresentCardByIndex" parameterType="int" resultType="ghost.android.hisbeans.presentcard.PresentCardModel">
+		SELECT *
+		FROM xe_giftcards
+		WHERE `giftcard_srl` = #{giftcard_srl}
+	</select>
+
+	<select id="getLatestBarcodeNum" parameterType="map" resultType="string">
+		SELECT barcodeNum
+		FROM xe_giftcards
+		WHERE barcodeNum &gt; #{minNum} AND barcodeNum &lt; #{maxNum}
+		ORDER BY barcodeNum DESC
+		LIMIT 1
+	</select>
+
+	<select id="checkDupBarcodeNum" parameterType="string" resultType="string">
+		SELECT barcodeNum
+		FROM xe_giftcards
+		WHERE barcodeNum = #{barcodeNum}
+	</select>
+	
+	<insert id="addPresentCard" parameterType="map">
+		INSERT INTO
+		xe_giftcards(giftcard_srl, module_srl, menu, message, comment_count, uploaded_count, senderId, user_name, nick_name, member_srl, email_address, receiverPhoneNum, barcodeNum, sendDate, useDate, usedFlag, ipaddress, list_order, update_order)
+		VALUES(#{presentCard.giftcard_srl}, 365, #{presentCard.menu}, #{presentCard.message}, 0, 0, #{presentCard.senderId}, #{presentCard.user_name},#{presentCard.nick_name},#{presentCard.member_srl},#{presentCard.email_address}, 
+		#{presentCard.receiverPhoneNum}, #{presentCard.barcodeNum}, now()+'', null, #{presentCard.usedFlag}, #{presentCard.ipaddress}, #{presentCard.list_order}, #{presentCard.update_order})
+	</insert>
+	
+	<update id="updatePresentCard" parameterType="map">
+		UPDATE xe_giftcards
+		SET useDate = current_date(), usedFlag = #{presentCard.usedFlag}
+		WHERE `giftcard_srl` = #{presentCard.giftcard_srl}
+	</update>
+	
+</mapper>

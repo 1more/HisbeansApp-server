@@ -1,0 +1,43 @@
+package ghost.android.hisbeans.user;
+
+import java.util.List;
+
+/**
+ * @author SeungMin
+ * @email rfrost77@gmail.com
+ * @classname UserDao.java
+ * @package ghost.android.hisbeans.user
+ * @date 2012. 7. 13. 오후 3:07:50
+ * @purpose : User 관련 DB Access 담당 Object Interface
+ *
+ * @comment : 
+ *
+ */
+
+public interface UserDao {
+	
+	/*** 구현 완료 ***/
+	
+	public void addUser(UserModel user);
+	public UserModel getUserById(String id);
+	public UserModel getUserByEmail(String email);
+	public UserModel getUserByPhoneNum(String phoneNum);
+	public UserModel getUserByNamePhoneNum(String name, String phoneNum);
+	public UserModel getUserByIdNamePhoneNum(String id, String name, String phoneNum);
+	public UserModel getUserByIdPassword(String id, String password);
+	public UserModel getUserByNameEmail(String name, String email);
+	public UserModel getUserByIdNameEmail(String id, String name, String email);
+	public String getUserByNickname(String nickname);
+	public List<UserModel> getAllUser();
+	public void deleteUser(String id);
+	public void updateUser(UserModel user);
+	public String getProperBarcodeNum();
+	public void addBarcode(UserBarcodeModel barcode);
+	public UserBarcodeModel getUserBarcodeById(String id);
+	public String genValidCode(String id);
+	public String getValidCode(String id);
+	public boolean rmvValidCode(String id);
+	public String getProperName(String senderId);
+	public String getProperNickname(String senderId);
+	public int getProperMemberSrl(String senderId);
+}

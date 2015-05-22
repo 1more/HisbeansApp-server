@@ -1,0 +1,94 @@
+package ghost.android.hisbeans.presentcard;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.ibatis.session.SqlSession;
+
+/**
+ * @author SeungMin
+ * @email rfrost77@gmail.com
+ * @classname PresentCardDaoJdbc.java
+ * @package ghost.android.hisbeans.presentcard
+ * @date 2012. 8. 8. 오전 8:49:19
+ * @purpose : 
+ *
+ * @comment : 
+ *
+ */
+public class PresentCardDaoJdbc implements PresentCardDao{
+	private SqlSession sqlSession;
+
+	public void setSqlSession(SqlSession sqlSession){
+		this.sqlSession = sqlSession;
+	}
+	
+	
+	
+	/*************** DAO Methods ***************/
+	
+	/** id를 기준으로 present card list를 db에서 얻어오는 method
+	 * 
+	 * @param String id
+	 * @return List<PresentCardModel>
+	 * 
+	 */
+	public List<PresentCardModel> getPresentCardsById(String id) {
+		return sqlSession.selectList("getPresentCardsById", id);
+	}
+
+	
+	
+	/** phoneNum을 기준으로 present card list를 db에서 얻어오는 method
+	 * 
+	 * @param String phoneNum
+	 * @return List<PresentCardModel>
+	 * 
+	 */
+	public List<PresentCardModel> getPresentCardsByPhoneNum(String phoneNum) {
+		return sqlSession.selectList("getPresentCardsByPhoneNum", phoneNum);
+	}
+
+	
+	
+	/** index을 기준으로 present card를 db에서 얻어오는 method
+	 * 
+	 * @param int index
+	 * @return PresentCardModel
+	 * 
+	 */
+	public PresentCardModel getPresentCardByIndex(int giftcard_srl) {
+		return sqlSession.selectOne("getPresentCardByIndex", giftcard_srl);
+	}
+	
+	
+	
+	/** 선물카드 설정, 결제, 구매확인 후 db에 선물카드 정보를 저장시키는 method
+	 * 
+	 * @param PresentCardModel presentCard
+	 * @return void
+	 * 
+	 */
+	public void addPresentCard(PresentCardModel presentCard) {
+		Map<String, PresentCardModel> param = new HashMap<String, PresentCardModel>();
+		param.put("presentCard", presentCard);
+		
+		sqlSession.insert("addPresentCard", param);
+	}
+
+	
+	
+	/** 선물카드 사용 시 date, usedFlag 변경시키는 method
+	 * 
+	 * @param PresentCardModel presentCard
+	 * @return void
+	 * 
+	 */
+	public void updatePresentCard(PresentCardModel presentCard) {
+		Map<String, PresentCardModel> param = new HashMap<String, PresentCardModel>();
+		param.put("presentCard", presentCard);
+		
+		sqlSession.insert("updatePresentCard", param);
+	}
+}

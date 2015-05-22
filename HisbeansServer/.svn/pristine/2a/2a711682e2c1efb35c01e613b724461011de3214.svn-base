@@ -1,0 +1,5 @@
+package ghost.android.hisbeans.user;
+
+public class MakeBarcodeException extends RuntimeException {
+
+}

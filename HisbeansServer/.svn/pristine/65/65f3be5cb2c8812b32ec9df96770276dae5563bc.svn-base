@@ -1,0 +1,461 @@
+package ghost.android.hisbeans.user;
+
+import ghost.android.hisbeans.GlobalVariables;
+import ghost.android.hisbeans.SMTPMailSendManager;
+import ghost.android.hisbeans.coffeestamp.CoffeeStampDao;
+import ghost.android.hisbeans.sms.UTF8SmsSender;
+
+import java.io.File;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+
+import net.sourceforge.barbecue.Barcode;
+import net.sourceforge.barbecue.BarcodeException;
+import net.sourceforge.barbecue.BarcodeFactory;
+import net.sourceforge.barbecue.BarcodeImageHandler;
+import net.sourceforge.barbecue.output.OutputException;
+
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+/**
+ * @author SeungMin
+ * @email rfrost77@gmail.com
+ * @classname UserServiceImpl.java
+ * @package ghost.android.hisbeans.user
+ * @date 2012. 7. 17. �ㅽ썑 4:05:39
+ * @purpose : 
+ * 
+ * @comment :
+ * 
+ */
+@Transactional
+public class UserServiceImpl implements UserService {
+	private UserDao userDao;
+	private CoffeeStampDao coffeeStampDao;
+
+	public void setUserDao(UserDao userDao) {
+		this.userDao = userDao;
+	}
+
+	public void setCoffeeStampDao(CoffeeStampDao coffeeStampDao) {
+		this.coffeeStampDao = coffeeStampDao;
+	}
+
+
+
+	/*************** Override Methods ***************/
+
+	/**
+	 * Login Method
+	 * 
+	 * @param String
+	 *            id, String password
+	 * @return boolean
+	 * 
+	 */
+	public Map<String, String> login(String id, String password) {
+		// login success
+		if (userDao.getUserByIdPassword(id, password) != null) {
+			UserBarcodeModel userBarcode = userDao.getUserBarcodeById(id);
+			String barcodeNum = userBarcode.getBarcodeNum();
+			String barcodeURL = userBarcode.getBarcodeImgUrl();
+
+			UserModel user = userDao.getUserById(id);
+			String phoneNum = user.getPhoneNum();
+
+			Map<String, String> ret = new HashMap<String, String>();
+			ret.put("barcodeNum", barcodeNum);
+			ret.put("phoneNum", "0"+phoneNum);
+			ret.put("barcodeURL", barcodeURL);
+
+			return ret; // return user data
+		}
+		// login fail
+		else {
+			Map<String, String> ret = new HashMap<String, String>();
+			ret.put("barcodeNum", "-1");
+			ret.put("phoneNum", "-1");
+			ret.put("barcodeURL", "-1");
+			return ret; // return -1
+		}
+	}
+
+
+
+	/**
+	 * sign up Method
+	 * 
+	 * @param String
+	 *            id, String email, String password, String name, String
+	 *            phoneNum
+	 * @return int
+	 * 
+	 */
+	public int signUp(String id, String email, String password, String name,
+			String phoneNum) throws MakeBarcodeException {
+		String nick_name = name;
+		
+		// id duplication error
+		if (userDao.getUserById(id) != null) {
+			return GlobalVariables.ID_DUPLI_ERROR; // return -1
+		}
+		// email duplication error
+		if (userDao.getUserByEmail(email) != null) {
+			return GlobalVariables.EMAIL_DUPLI_ERROR; // return -2
+		}
+		// phone number duplication error
+		if (userDao.getUserByPhoneNum(phoneNum) != null) {
+			return GlobalVariables.PHONENUM_DUPLI_ERROR; // return -3
+		}
+
+		//if there is same nick_name in db, change nickname for non-duplicate nickname 
+		if (userDao.getUserByNickname(name) != null){
+			Date date = new Date();
+			nick_name = nick_name + date.toString();
+		}
+		
+		// sign up process
+		if (makeBarcode(id) == GlobalVariables.BARCODE_MAKE_SUCCESS) {
+			// add user information to server DB
+			userDao.addUser(new UserModel(id, email, password, name, nick_name,
+					phoneNum));
+
+			return GlobalVariables.SIGN_UP_SUCCESS; // return 1
+		}
+		else {
+			throw new MakeBarcodeException();
+		}
+	}
+
+
+
+	/**
+	 * make ruled barcode number useing method - getProperBarcodeNum()
+	 * 
+	 * @param none
+	 * @return int - (proper barcodeNum + 1)
+	 * 
+	 */
+	@Transactional(propagation = Propagation.REQUIRED)
+	public int makeBarcode(String id) {
+		int barcodeNum = getProperBarcodeNum();
+		String barcodeNumber = barcodeNum + "";
+		String barcodeImgUrl = barcodeNumber + ".png";
+
+		System.out.println("barcode start");
+
+		try {
+			Barcode barcode = BarcodeFactory
+					.createCode39(barcodeNumber, true);
+			File file = new File(GlobalVariables.BARCODE_PATH_IN_SERV + barcodeImgUrl);
+			File backupFile = new File(GlobalVariables.BARCODE_BACKUP_PATH_IN_SERV + barcodeImgUrl);
+
+			BarcodeImageHandler.savePNG(barcode, file);
+			BarcodeImageHandler.savePNG(barcode, backupFile);
+		} catch (BarcodeException e) {
+			return GlobalVariables.BARCODE_ERROR; // return -4
+		} catch (OutputException e) {
+			return GlobalVariables.BARCODE_ERROR; // return -4
+		}
+
+		userDao.addBarcode(new UserBarcodeModel(id, barcodeNumber, barcodeImgUrl));
+
+		coffeeStampDao.addStampCard(barcodeNumber);
+
+		return GlobalVariables.BARCODE_MAKE_SUCCESS;
+	}
+
+
+
+	/**
+	 * sign out method
+	 * 
+	 * @param String
+	 *            id, String userBarcodeNum
+	 * @return void
+	 * 
+	 */
+	public boolean signOut(String id) {
+		UserBarcodeModel barcode = userDao.getUserBarcodeById(id);
+
+		if (barcode != null) {
+			String barcodeNum = barcode.getBarcodeNum();
+
+			userDao.deleteUser(id);
+			coffeeStampDao.deleteCoffeeStamp(barcodeNum);
+
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+
+
+	/**
+	 * look for id by email method
+	 * 
+	 * @param String
+	 *            name, String email
+	 * @return String
+	 * 
+	 */
+	public String findIdByEmail(String name, String email) {
+		UserModel user = userDao.getUserByNameEmail(name, email);
+
+		if (user != null) {
+			return user.getId();
+		} else {
+			return "false";
+		}
+	}
+
+
+
+	/**
+	 * look for id by phone number method
+	 * 
+	 * @param String
+	 *            name, String phoneNum
+	 * @return String
+	 * 
+	 */
+	public String findIdByPhoneNum(String name, String phoneNum) {
+		UserModel user = userDao.getUserByNamePhoneNum(name, phoneNum);
+
+		if (user != null) {
+			return user.getId();
+		} else {
+			return "false";
+		}
+	}
+
+
+
+	/**
+	 * look for password by eamil method
+	 * 
+	 * @param String
+	 *            id, String name, String email
+	 * @return String
+	 * 
+	 */
+	public boolean findPasswordByEmail(String id, String name, String email) {
+		UserModel user = userDao.getUserByIdNameEmail(id, name, email);
+
+		if (user != null) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+
+
+	/**
+	 * look for password by phone number method
+	 * 
+	 * @param String
+	 *            name, String phoneNum
+	 * @return String
+	 * 
+	 */
+	public boolean findPasswordByPhoneNum(String id, String name, String phoneNum) {
+		UserModel user = userDao.getUserByIdNamePhoneNum(id, name, phoneNum);
+
+		if (user != null) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+
+
+	/**
+	 * chagne user information method
+	 * 
+	 * @param String
+	 *            id, String email, String password, String phoneNum
+	 * @return boolean
+	 * 
+	 */
+	public boolean modifyUser(String id, String email, String password,
+			String phoneNum) {
+		UserModel user = userDao.getUserById(id);
+
+		if (user != null) {
+			user.setEmail(email);
+			user.setPassword(password);
+			user.setPhoneNum(phoneNum);
+
+			userDao.updateUser(user);
+
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+
+
+	/**
+	 * change only user password method
+	 * 
+	 * @param String id, String password
+	 * @return boolean
+	 * 
+	 */
+	public boolean modifyPassword(String id, String validCode, String password) {
+		UserModel user = userDao.getUserById(id);
+
+
+		if (user != null) {
+			if(checkValidCode(id, validCode) == true){
+				user.setPassword(password);
+
+				userDao.updateUser(user);
+
+				userDao.rmvValidCode(id);
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+
+
+	/**
+	 * get UserBarcodeModel Method
+	 * 
+	 * @param String id
+	 * @return UserBarcodeModel
+	 * 
+	 */
+	public UserBarcodeModel getBarcodeNumber(String id) {
+		UserBarcodeModel barcode = userDao.getUserBarcodeById(id);
+
+		return barcode;
+	}
+
+
+
+	/** Send E-MAIL with validate code
+	 * 
+	 * @param id
+	 *          
+	 * @param email
+	 *            : e-mail address
+	 * @return boolean : true for success to send e-mail
+	 * 
+	 */
+	public boolean validateForMail(String id, String email) {
+		String validCode = userDao.genValidCode(id);
+
+		if(validCode.equals(GlobalVariables.CODE_ALREADY_EXIST)){
+			return false;
+		}
+
+		String subject = "인증코드 발송.";
+		String content = "인증 코드는 \"" + validCode+ "\"입니다.";
+
+		System.out.println(email);
+		new SMTPMailSendManager().sendEmail(GlobalVariables.ADMIN_MAIL, email, subject, content);
+
+		return true;
+	}
+
+
+
+	/** Send Text message with validate code
+	 * 
+	 * @param validCode
+	 *            : validate code for join user
+	 * @param pNum
+	 *            : receiver phone number
+	 * @return boolean : true for success to send e-mail
+	 * 
+	 */
+	public boolean validateForPhone(String id, String pNum){
+		String validCode = userDao.genValidCode(id);
+
+		if(validCode.equals("null")){
+			return false;
+		}
+
+		String content = "인증코드 : "+validCode;
+
+		System.out.println(pNum);
+		UTF8SmsSender smsSender = new UTF8SmsSender(pNum, GlobalVariables.ADMIN_PHONE, content);
+		smsSender.sendSms();
+
+		return true;
+	}
+
+
+
+	/** Check valid code
+	 * 
+	 * @param id
+	 * 			: id
+	 * @param validCode
+	 *            : validate code for join user
+	 * @return boolean : true if valid code is correct value
+	 * 
+	 */
+	public boolean checkValidCode(String id, String validCode) {
+		String validCodeInDB = userDao.getValidCode(id);
+
+		if(validCodeInDB.equals(validCode)){
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+
+
+	/** set timeout to validate process
+	 * 
+	 * @param id
+	 * 			: id
+	 * @return void
+	 * 
+	 */
+	public void sleepAndRemoveValideCode(String id) {
+		final String tid = id;
+		new Thread(){
+			public void run(){
+				try {
+					Thread.sleep(1000 * 60 * 3);	// wait 3 minutes
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+
+				userDao.rmvValidCode(tid);
+			}
+		}.start();
+
+	}
+
+
+
+	/*************** Self Methods ***************/
+
+	/**
+	 * get ruled barcode number using userDao.getProperBarcodeNum()
+	 * 
+	 * @param none
+	 * @return int - proper barcodeNum + 1;
+	 * 
+	 */
+	private int getProperBarcodeNum() {
+		int barcodeNum = Integer.parseInt(userDao.getProperBarcodeNum());
+		barcodeNum += 1;
+
+		return barcodeNum;
+	}
+}

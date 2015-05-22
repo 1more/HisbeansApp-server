@@ -1,0 +1,285 @@
+package ghost.android.hisbeans.user;
+
+import ghost.android.hisbeans.GlobalVariables;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.ModelAndView;
+
+/**
+ * @author SeungMin
+ * @email rfrost77@gmail.com
+ * @classname UserController.java
+ * @package ghost.android.hisbeans.user
+ * @date 2012. 7. 17. 오후 4:06:51
+ * @purpose : Client로부터 Request를 URL 형태로 받아 userService가 수행하는 Method들을 수행시키고 결과를 return하는 Controller
+ *
+ * @comment : 
+ *
+ */
+
+@Controller
+public class UserController {
+	@Autowired
+	private UserService userService;
+
+
+
+	/************ Controller Methods ***************/
+
+	/** barcode number과 img를 생성하는 method
+	 * 
+	 * @param id, password, name, email, phoneNum : HTTP-GET parameter. 
+	 * 			ex) http://localhost:8080/HisbeansServer/joinOnWeb.html?id=d
+	 * @return int - (error code) to jsonView
+	 * 
+	 */
+	@RequestMapping(value = "joinOnWeb", method = RequestMethod.GET)
+	public ModelAndView joinOnWebMethod(@RequestParam("id") String id){
+		int result = userService.makeBarcode(id);
+
+		return new ModelAndView("jsonView", "joinOnWeb", result);
+	}
+
+
+
+	/**
+	 * @param id
+	 * 				ex) http://localhost:8080/HisbeansServer/getBarcode.html?id=d
+	 * @return barcode object
+	 */
+	@RequestMapping(value="getBarcode", method = RequestMethod.GET)
+	public ModelAndView getBarcodeById(@RequestParam("id") String id){
+		UserBarcodeModel result = userService.getBarcodeNumber(id);
+
+		return new ModelAndView("jsonView", "getBarcode", result);
+	}
+
+
+	/** 회원가입 Method
+	 * 
+	 * @param id, password, name, email, phoneNum : HTTP-GET parameter. 
+	 * 			ex) http://localhost:8080/HisbeansServer/signUp.html?id=d&email=d&password=d&name=d&phoneNum=d
+	 * @return boolean to jsonView
+	 * 
+	 */
+	@RequestMapping(value = "signUp", method = RequestMethod.POST)
+	public ModelAndView signUpMethod(org.springframework.web.context.request.WebRequest webRequest){
+		String id = webRequest.getParameter("id");
+		String pw = webRequest.getParameter("password");
+		String email = webRequest.getParameter("email");
+		String name = webRequest.getParameter("name");
+		String pNum = webRequest.getParameter("phoneNum");
+
+		String phoneNum = pNum.substring(1);
+
+		int result = GlobalVariables.SIGN_UP_SUCCESS;
+
+		try{
+			result = userService.signUp(id, email, pw, name, phoneNum);
+		} catch(MakeBarcodeException e){
+			result = GlobalVariables.BARCODE_ERROR; // return -4
+		}
+
+		return new ModelAndView("jsonView", "signUp", result);
+	}
+
+
+
+	/** Login Method
+	 * 
+	 * @param id, password : HTTP-POST parameter. 
+	 * 			ex) http://localhost:8080/HisbeansServer/login.html
+	 * @return boolean to jsonView
+	 * 
+	 */
+	@RequestMapping(value = "login", method = RequestMethod.POST)
+	public ModelAndView loginMethod(org.springframework.web.context.request.WebRequest webRequest){
+		String id = webRequest.getParameter("id");
+		String pw = webRequest.getParameter("password");
+
+		String result = userService.login(id, pw);
+
+		return new ModelAndView("jsonView", "login", result);
+	}
+
+
+
+	/** Sign Out Mehtod
+	 * 
+	 * @param id : HTTP-GET parameter. 
+	 * 			ex) http://localhost:8080/HisbeansServer/signOut.html?id=d&barcodeNum=d
+	 * @return true to jsonView
+	 * 
+	 */
+	@RequestMapping(value = "signOut", method = RequestMethod.GET)
+	public ModelAndView signOutMethod(@RequestParam("id") String id){
+		boolean result = userService.signOut(id);
+
+		return new ModelAndView("jsonView", "signOut", result);
+	}
+
+
+
+	/** name과 email로 id찾기 Mehtod
+	 * 
+	 * @param name email : HTTP-GET parameter. 
+	 * 			ex) http://localhost:8080/HisbeansServer/findIdByNameEmail.html?name=d&email=d
+	 * @return result string - (id) to jsonView
+	 * 
+	 */
+	@RequestMapping(value = "findIdByNameEmail", method = RequestMethod.GET)
+	public ModelAndView findIdByNameEmailMethod(@RequestParam("name") String name, @RequestParam("email") String email){
+		String result = userService.findIdByEmail(name, email);
+
+		return new ModelAndView("jsonView", "findIdByNameEmail", result);
+	}
+
+
+
+	/** name과 phoneNum로 id찾기 Mehtod
+	 * 
+	 * @param name phoneNum : HTTP-GET parameter. 
+	 * 			ex) http://localhost:8080/HisbeansServer/findIdByNamePhoneNum.html?name=d&phoneNum=d
+	 * @return result string - (id) to jsonView
+	 * 
+	 */
+	@RequestMapping(value = "findIdByNamePhoneNum", method = RequestMethod.GET)
+	public ModelAndView findIdByNamePhoneNumMethod(@RequestParam("name") String name, @RequestParam("phoneNum") String pNum){
+		String phoneNum = pNum.substring(1);
+		String result = userService.findIdByPhoneNum(name, phoneNum);
+
+		return new ModelAndView("jsonView", "findIdByNamePhoneNum", result);
+	}
+
+
+
+	/** id, name과 email로 password찾기 Mehtod
+	 * 
+	 * @param id name email : HTTP-GET parameter. 
+	 * 			ex) http://localhost:8080/HisbeansServer/findPasswordByIdNameEmail.html?id=d&name=d&email=d
+	 * @return result string - (id) to jsonView
+	 * 
+	 */
+	@RequestMapping(value = "findPasswordByIdNameEmail", method = RequestMethod.GET)
+	public ModelAndView findPasswordByIdNameEmailMethod(@RequestParam("id") String id, 
+			@RequestParam("name") String name, @RequestParam("email") String email){
+		String result = userService.findPasswordByEmail(id, name, email);
+
+		return new ModelAndView("jsonView", "findPasswordByIdNameEmail", result);
+	}
+
+
+
+	/** id, name과 phoneNum로 password찾기 Mehtod
+	 * 
+	 * @param id name email : HTTP-GET parameter. 
+	 * 			ex) http://localhost:8080/HisbeansServer/findPasswordByIdNamePhoneNum.html?id=d&name=d&phoneNum=d
+	 * @return result string - (id) to jsonView
+	 * 
+	 */
+	@RequestMapping(value = "findPasswordByIdNamePhoneNum", method = RequestMethod.GET)
+	public ModelAndView findPasswordByIdNamePhoneNumMethod(@RequestParam("id") String id, 
+			@RequestParam("name") String name, @RequestParam("phoneNum") String pNum){
+		String phoneNum = pNum.substring(1);
+		String result = userService.findPasswordByPhoneNum(id, name, phoneNum);
+
+		return new ModelAndView("jsonView", "findPasswordByIdNamePhoneNum", result);
+	}
+
+
+
+	/** 회원의 정보를 수정하는 Mehtod
+	 * 
+	 * @param id email password phoneNum : HTTP-GET parameter. 
+	 * 			ex) http://localhost:8080/HisbeansServer/modifyUser.html?id=d&email=d&password=d&phoneNum=d
+	 * @return result string - (id) to jsonView
+	 * 
+	 */
+	@RequestMapping(value = "modifyUser", method = RequestMethod.GET)
+	public ModelAndView modifyUserMethod(@RequestParam("id") String id, @RequestParam("email") String email, 
+			@RequestParam("password") String password, @RequestParam("phoneNum") String pNum){
+		String phoneNum = pNum.substring(1);
+		boolean result = userService.modifyUser(id, email, password, phoneNum);
+
+		return new ModelAndView("jsonView", "modifyUser", result);
+	}
+
+
+
+	/** 회원의 비밀번호를 수정하는 Mehtod
+	 * 
+	 * @param id password : HTTP-POST parameter. 
+	 * 			ex) http://localhost:8080/HisbeansServer/modifyPassword.html
+	 * @return result string - (id) to jsonView
+	 * 
+	 */
+	@RequestMapping(value = "modifyPassword", method = RequestMethod.POST)
+	public ModelAndView modifyPasswordMethod(org.springframework.web.context.request.WebRequest webRequest){
+		String id = webRequest.getParameter("id");
+		String validCode = webRequest.getParameter("validCode");
+		String password = webRequest.getParameter("newPassword");
+
+		boolean result = userService.modifyPassword(id, validCode, password);
+
+		return new ModelAndView("jsonView", "modifyPassword", result);
+	}
+
+
+
+	/**
+	 * @param validCode
+	 * @param email
+	 * 				ex) http://localhost:8080/HisbeansServer/validateForMail.html?id=a&email=a@b.c
+	 * @return true for success to jsonView
+	 */
+	@RequestMapping(value = "validateForMail", method = RequestMethod.GET)
+	public ModelAndView validateForMailMethod(@RequestParam("id") String id, @RequestParam("email") String email){
+		boolean result = userService.validateForMail(id, email);
+
+		if(result == true){
+			userService.sleepAndRemoveValideCode(id);
+		}
+
+		return new ModelAndView("jsonView", "validateForMail", result);
+	}
+
+
+	/**
+	 * @param validCode
+	 * @param pNum
+	 * 			ex) http://localhost:8080/HisbeansServer/validateForPhone.html?validCode=4283&phoneNum=01027160863
+	 * @return
+	 */
+	@RequestMapping(value = "validateForPhone", method = RequestMethod.GET)
+	public ModelAndView validateForPhoneMethod(@RequestParam("id") String id, @RequestParam("phoneNum") String pNum){
+		boolean result = userService.validateForPhone(id, pNum);
+
+		if(result == true){
+			userService.sleepAndRemoveValideCode(id);
+		}
+
+		return new ModelAndView("jsonView", "validateForPhone", result);
+	}
+
+
+	/** 인증코드를 확인하는 Mehtod
+	 * 
+	 *  @param id password : HTTP-POST parameter. 
+	 * 			ex) http://localhost:8080/HisbeansServer/validate.html
+	 *  @return result string - (id) to jsonView
+	 * 
+	 */
+	@RequestMapping(value = "validate", method = RequestMethod.POST)
+	public ModelAndView validateMethod(org.springframework.web.context.request.WebRequest webRequest){
+		String id = webRequest.getParameter("id");
+		String validCode = webRequest.getParameter("validCode");
+
+		boolean result = userService.checkValidCode(id, validCode);
+
+		return new ModelAndView("jsonView", "validate", result);
+	}
+}

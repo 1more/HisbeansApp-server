@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ghost.android.hisbeans.presentcard">
+
+	<select id="getPresentCardsById" parameterType="string" resultType="ghost.android.hisbeans.presentcard.PresentCardModel">
+		SELECT *
+		FROM presentcard
+		WHERE senderId = #{id}
+	</select>
+
+	<select id="getPresentCardsByPhoneNum" parameterType="string" resultType="ghost.android.hisbeans.presentcard.PresentCardModel">
+		SELECT *
+		FROM presentcard
+		WHERE receiverPhoneNum = #{phoneNum}
+	</select>
+
+	<select id="getPresentCardByIndex" parameterType="int" resultType="ghost.android.hisbeans.presentcard.PresentCardModel">
+		SELECT *
+		FROM presentcard
+		WHERE `index` = #{index}
+	</select>
+	
+	<insert id="addPresentCard" parameterType="map">
+		INSERT INTO
+		presentcard(senderId, receiverPhoneNum, menu, message, sendDate, usedFlag, useDate, imageURL, barcodeURL)
+		VALUES(#{presentCard.senderId}, #{presentCard.receiverPhoneNum}, #{presentCard.menu},
+			#{presentCard.content}, current_date(), #{presentCard.usedFlag}, null, #{presentCard.imageURL}, #{presentCard.barcodeURL})
+	</insert>
+	
+	<update id="updatePresentCard" parameterType="map">
+		UPDATE presentcard
+		SET useDate = current_date(), usedFlag = #{presentCard.usedFlag}
+		WHERE `index` = #{presentCard.index}
+	</update>
+	
+</mapper>

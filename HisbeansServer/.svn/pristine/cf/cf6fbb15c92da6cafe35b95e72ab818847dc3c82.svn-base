@@ -1,0 +1,40 @@
+package ghost.android.hisbeans.user;
+
+public class UserBarcodeModel {
+	private String id;
+	private String barcodeNum;
+	private String barcodeImgUrl;
+	
+	
+	public UserBarcodeModel() {
+	}
+
+	public UserBarcodeModel(String id, String barcodeNum, String barcodeImgUrl) {
+		this.id = id;
+		this.barcodeNum = barcodeNum;
+		this.barcodeImgUrl = barcodeImgUrl;
+	}
+	
+	
+	
+	/** GETTERs AND SETTERs **/
+	
+	public String getId() {
+		return id;
+	}
+	public void setId(String id) {
+		this.id = id;
+	}
+	public String getBarcodeNum() {
+		return barcodeNum;
+	}
+	public void setBarcodeNum(String barcodeNum) {
+		this.barcodeNum = barcodeNum;
+	}
+	public String getBarcodeImgUrl() {
+		return barcodeImgUrl;
+	}
+	public void setBarcodeImgUrl(String barcodeImgUrl) {
+		this.barcodeImgUrl = barcodeImgUrl;
+	}
+}

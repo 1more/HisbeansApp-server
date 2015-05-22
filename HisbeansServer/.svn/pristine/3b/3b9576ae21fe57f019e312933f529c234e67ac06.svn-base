@@ -1,0 +1,179 @@
+package ghost.android.hisbeans.presentcard;
+
+import ghost.android.hisbeans.GlobalVariables;
+import ghost.android.hisbeans.sms.UTF8SmsSender;
+
+import java.io.IOException;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.ModelAndView;
+
+import sun.misc.BASE64Decoder;
+
+/**
+ * @author SeungMin
+ * @email rfrost77@gmail.com
+ * @classname PresentCardController.java
+ * @package ghost.android.hisbeans.presentcard
+ * @date 2012. 7. 19. 오후 6:14:32
+ * @purpose : Client로부터 Request를 URL 형태로 받아 presentCardService가 수행하는 Method들을 수행시키고 결과를 return하는 Controller
+ *
+ * @comment : 
+ *
+ */
+
+@Controller
+public class PresentCardController {
+	@Autowired
+	private PresentCardService presentCardService;
+	
+	
+	
+	/************ Controller Methods ***************/
+	
+	/** 선물카드를 선물하는 Mehtod
+	 * 
+	 * @param senderId, receiverPhoneNum, email, menu, message
+	 * @return boolean to jsonView
+	 * 
+	 * @usage ./present.html
+	 */
+	@RequestMapping(value = "present", method = RequestMethod.POST)
+	public ModelAndView presentMethod(org.springframework.web.context.request.WebRequest webRequest){
+		String senderId = webRequest.getParameter("senderId");
+		String receiverPhoneNum = webRequest.getParameter("receiverPhoneNum");
+		String email = webRequest.getParameter("email");
+		String menu = webRequest.getParameter("menu");
+		String message = "";
+		String receiverName = "";
+		try {
+			message = new String(new BASE64Decoder().decodeBuffer(webRequest.getParameter("message")),"UTF-8");
+			receiverName = new String(new BASE64Decoder().decodeBuffer(webRequest.getParameter("receiverName")),"UTF-8");
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+		
+		boolean result = true;
+		PresentCardModel presented = null;
+		
+		System.out.println("*** present Giftcard ***");
+		System.out.println("sender id: "+senderId);
+		System.out.println("receiver Phone: "+receiverPhoneNum);
+		try{
+			presented = presentCardService.present(senderId, receiverPhoneNum, email, menu, message, receiverName);
+		}
+		catch(PresentCardSaveException e){
+			result = false;
+		}
+		
+		// send the present card with sms to receiver
+		if(presented != null){
+			// make proper code for the present card
+			String code = "["+presented.getBarcodeNum()+"]";
+			String text = "Hisbeans)\n" + code + " 선물카드가 도착했습니다! 안드로이드 앱, 홈페이지에서 선물카드를 확인하실 수 있습니다.";
+			
+			String senderPhoneNum = GlobalVariables.ADMIN_PHONE;	// temp phone number
+			
+			// send sms
+			UTF8SmsSender smsSender = new UTF8SmsSender(receiverPhoneNum, senderPhoneNum, text);
+			smsSender.sendSms();
+		}
+		
+		return new ModelAndView("jsonView", "present", result);
+	}
+	
+	
+	
+	/** Sender의 입장으로 지금까지 보낸 선물카드 history를 받는 method
+	 * 
+	 * @param id
+	 * @return List<Map<String, PresentCardModel>> to jsonView
+	 * 
+	 * @usage ./getPresentCardsAsSender.html?id=user
+	 */
+	@RequestMapping(value = "getPresentCardsAsSender", method = RequestMethod.GET)
+	public ModelAndView getPresentCardsAsSenderMethod(@RequestParam("id") String id){
+		List<PresentCardModel> presentCards = presentCardService.getPresentCardsAsSender(id);
+		
+		return new ModelAndView("jsonView", "presentCards", presentCards);
+	}
+	
+	
+	
+	/** receiver의 입장으로 지금까지 보낸 선물카드 history를 받는 method
+	 * 
+	 * @param id
+	 * @return List<Map<String, PresentCardModel>> to jsonView
+	 * 
+	 * @usage ./getPresentCardsAsReceiver.html?phoneNum=0101234567
+	 */
+	@RequestMapping(value = "getPresentCardsAsReceiver", method = RequestMethod.GET)
+	public ModelAndView getPresentCardsAsReceiverMethod(@RequestParam("phoneNum") String phoneNum){
+		List<PresentCardModel> presentCards = presentCardService.getPresentCardsAsReceiver(phoneNum);
+				
+		return new ModelAndView("jsonView", "presentCards", presentCards);
+	}
+	
+	/**
+	 * @param index
+	 * @return PresentCardModel to jsonView
+	 * 
+	 * @usage ./getPresentCardWithIndex.html?index=3
+	 */
+	@RequestMapping(value = "getPresentCardWithIndex", method = RequestMethod.GET)
+	public ModelAndView getPresentCardWithIndex(@RequestParam("giftcard_srl") String giftcard_srl){
+		PresentCardModel presentCard = presentCardService.getPresentCardWithIndex(giftcard_srl);
+		
+		return new ModelAndView("jsonView", "presentCard", presentCard);
+	}
+	
+	
+	
+	/** 선물카드를 사용하는 Method
+	 * 
+	 * @param index
+	 * @return int - (error or success code) to jsonView
+	 * 
+	 * @usage ./usePresentCard.html?index=3
+	 */
+	@RequestMapping(value = "usePresentCard", method = RequestMethod.GET)
+	public ModelAndView usePresentCardMethod(@RequestParam("giftcard_srl") int giftcard_srl){
+		int result = presentCardService.usePresentCard(giftcard_srl);
+		
+		return new ModelAndView("jsonView", "usePresentCard", result);
+	}
+	
+	
+	/** 모든 메뉴 정보를 가지고오는 Method
+	 * 
+	 * @param index
+	 * @return int - (error or success code) to jsonView
+	 * 
+	 * @usage ./getAllMenu.html
+	 */
+	@RequestMapping(value = "getAllMenu", method = RequestMethod.GET)
+	public ModelAndView getAllMenuMethod(){
+		List<PresentCardMenuModel> menus = presentCardService.getAllMenu();
+		
+		return new ModelAndView("jsonView", "menu", menus);
+	}
+	
+	/** 메뉴 타입 정보를 가지고오는 Method
+	 * 
+	 * @param int index
+	 * @return int - (error or success code) to jsonView
+	 * 
+	 * @usage ./getMenuType.html
+	 */
+	@RequestMapping(value = "getMenuType", method = RequestMethod.GET)
+	public ModelAndView getMenuTypeMethod(){
+		List<String> types = presentCardService.getMenuType();
+		
+		return new ModelAndView("jsonView", "menuType", types);
+	}
+}

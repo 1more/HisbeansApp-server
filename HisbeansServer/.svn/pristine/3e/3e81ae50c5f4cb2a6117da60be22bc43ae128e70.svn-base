@@ -1,0 +1,146 @@
+package ghost.android.hisbeans.presentcard;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.ibatis.session.SqlSession;
+
+/**
+ * @author SeungMin
+ * @email rfrost77@gmail.com
+ * @classname PresentCardDaoJdbc.java
+ * @package ghost.android.hisbeans.presentcard
+ * @date 2012. 8. 8. 오전 8:49:19
+ * @purpose : 
+ *
+ * @comment : 
+ *
+ */
+public class PresentCardDaoJdbc implements PresentCardDao{
+	private SqlSession sqlSession;
+
+	public void setSqlSession(SqlSession sqlSession){
+		this.sqlSession = sqlSession;
+	}
+	
+	
+	
+	/*************** DAO Methods ***************/
+	
+	public int getPresentCardIndex(){
+		return sqlSession.selectOne("getPresentCardIndex");
+	}
+	
+	/** id를 기준으로 present card list를 db에서 얻어오는 method
+	 * 
+	 * @param String id
+	 * @return List<PresentCardModel>
+	 * 
+	 */
+	public List<PresentCardModel> getPresentCardsById(String id) {
+		return sqlSession.selectList("getPresentCardsById", id);
+	}
+
+	
+	
+	/** phoneNum을 기준으로 present card list를 db에서 얻어오는 method
+	 * 
+	 * @param String phoneNum
+	 * @return List<PresentCardModel>
+	 * 
+	 */
+	public List<PresentCardModel> getPresentCardsByPhoneNum(String phoneNum) {
+		return sqlSession.selectList("getPresentCardsByPhoneNum", phoneNum);
+	}
+
+	
+	
+	/** index을 기준으로 present card를 db에서 얻어오는 method
+	 * 
+	 * @param int index
+	 * @return PresentCardModel
+	 * 
+	 */
+	public PresentCardModel getPresentCardByIndex(int giftcard_srl) {
+		return sqlSession.selectOne("getPresentCardByIndex", giftcard_srl);
+	}
+	
+	
+	/** 선물카드 바코드 번호 중 제일 최근의 값을 가지고 오는 method
+	 * 
+	 * @param generated PresentCard barcode num
+	 * @return latest barcode number
+	 * 
+	 */
+	public String getLatestBarcodeNum(String minNum, String maxNum) {
+		Map<String, String> param = new HashMap<String, String>();
+		param.put("minNum", minNum);
+		param.put("maxNum", maxNum);
+		
+		String ret = sqlSession.selectOne("getLatestBarcodeNum", param);
+		if(ret == null)
+			ret = minNum;
+		
+		return ret;
+	}
+
+	
+	
+	/** 선물카드 사용 시 date, usedFlag 변경시키는 method
+	 * 
+	 * @param PresentCardModel presentCard
+	 * @return void
+	 * 
+	 */
+	public boolean checkDupBarcodeNum(String barcodeNum) {
+		String ret = null;
+		ret = sqlSession.selectOne("checkDupBarcodeNum", barcodeNum);
+		
+		if(ret != null){
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
+	
+	/** 선물카드 설정, 결제, 구매확인 후 db에 선물카드 정보를 저장시키는 method
+	 * 
+	 * @param PresentCardModel presentCard
+	 * @return void
+	 * 
+	 */
+	public void addPresentCard(PresentCardModel presentCard) {
+		Map<String, PresentCardModel> param = new HashMap<String, PresentCardModel>();
+		param.put("presentCard", presentCard);
+		
+		int srl = presentCard.getGiftcard_srl();
+		
+		sqlSession.insert("addPresentCard", param);
+		sqlSession.insert("addSeq", srl);
+	}
+
+	
+	
+	/** 선물카드 사용 시 date, usedFlag 변경시키는 method
+	 * 
+	 * @param PresentCardModel presentCard
+	 * @return void
+	 * 
+	 */
+	public void updatePresentCard(PresentCardModel presentCard) {
+		Map<String, PresentCardModel> param = new HashMap<String, PresentCardModel>();
+		param.put("presentCard", presentCard);
+		
+		sqlSession.insert("updatePresentCard", param);
+	}
+
+
+
+	public List<PresentCardMenuModel> getAllMenu() {
+		List<PresentCardMenuModel> menuList = sqlSession.selectList("getAllMenus");
+		return menuList;
+	}
+	
+}

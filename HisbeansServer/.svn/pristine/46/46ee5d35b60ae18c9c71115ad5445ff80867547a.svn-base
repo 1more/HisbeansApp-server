@@ -1,0 +1,20 @@
+package ghost.android.hisbeans.noticeboard;
+
+import java.util.List;
+
+/**
+ * @author HyeonWook Kim
+ * @email khw0867@gmail.com
+ * @classname NoticeBoardDao.java
+ * @package ghost.android.hisbeans.noticeboard
+ * @date 2012. 7. 19.
+ * @purpose : Interface for DAO related with notice board table
+ *
+ */
+
+public interface NoticeBoardDao {
+
+	/*** 구현 완료 ***/
+	
+	public List<NoticeBoardModel> getAllNotices();
+}

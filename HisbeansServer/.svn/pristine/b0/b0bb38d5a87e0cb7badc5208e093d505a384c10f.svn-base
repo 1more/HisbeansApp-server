@@ -1,0 +1,199 @@
+package ghost.android.hisbeans.presentcard;
+
+import ghost.android.hisbeans.GlobalVariables;
+
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+
+import javax.imageio.ImageIO;
+
+import net.sourceforge.barbecue.Barcode;
+import net.sourceforge.barbecue.BarcodeException;
+import net.sourceforge.barbecue.BarcodeFactory;
+import net.sourceforge.barbecue.BarcodeImageHandler;
+import net.sourceforge.barbecue.output.OutputException;
+
+import org.springframework.transaction.annotation.Transactional;
+
+/**
+ * @author SeungMin
+ * @email rfrost77@gmail.com
+ * @classname PresentCardServiceImpl.java
+ * @package ghost.android.hisbeans.presentcard
+ * @date 2012. 7. 24. 오전 2:53:05
+ * @purpose : implements 선물카드 Service using PresentCardDao
+ * 
+ * @comment :
+ * 
+ */
+
+@Transactional
+public class PresentCardServiceImpl implements PresentCardService {
+	private PresentCardDao presentCardDao;
+
+	public void setPresentCardDao(PresentCardDao presentCardDao) {
+		this.presentCardDao = presentCardDao;
+	}
+
+
+
+	/*************** Override Methods ***************/
+
+	/**
+	 * 선물카드를 보내는 Method
+	 * 
+	 * @param String
+	 *            senderId, String receiverPhoneNum, String menu, String message
+	 * @return boolean
+	 * 
+	 */
+	public boolean present(String senderId, String receiverPhoneNum,
+			String menu, String message) throws PresentCardSaveException {
+
+		String imageURL = null;
+		String barcodeURL = null;
+		
+		presentCardDao.addPresentCard(new PresentCardModel(0, senderId,
+				receiverPhoneNum, imageURL, barcodeURL, menu, message, null, null, 0));
+		if(saveGiftCard(senderId, message) && saveGiftCardBarcode(senderId)){
+			return true;
+		}
+		else{
+			throw new PresentCardSaveException();
+		}
+	}
+
+
+
+	/**
+	 * 선물카드를 보내는 Method
+	 * 
+	 * @param String
+	 *            id
+	 * @return List<PresentCardModel>
+	 * 
+	 */
+	public List<PresentCardModel> getPresentCardsAsSender(String id) {
+		return presentCardDao.getPresentCardsById(id);
+	}
+
+
+
+	/**
+	 * 선물카드를 보내는 Method
+	 * 
+	 * @param String
+	 *            phoneNum
+	 * @return List<PresentCardModel>
+	 * 
+	 */
+	public List<PresentCardModel> getPresentCardsAsReceiver(String phoneNum) {
+		return presentCardDao.getPresentCardsByPhoneNum(phoneNum);
+	}
+
+	public PresentCardModel getPresentCardWithIndex(String index){
+		return presentCardDao.getPresentCardByIndex(Integer.parseInt(index));
+	}
+
+
+
+	/**
+	 * 선물카드를 보내는 Method
+	 * 
+	 * @param int index
+	 * @return int - 상황에 따른 error 코드
+	 * 
+	 */
+	public int usePresentCard(int index) {
+		PresentCardModel presentCard = presentCardDao
+				.getPresentCardByIndex(index);
+
+		// 해당 index의 선물카드가 있으면
+		if (presentCard != null) {
+			// 사용하지 않은 카드라면
+			if (presentCard.getUsedFlag() == 0) {
+				presentCard.setUsedFlag(1);
+				presentCardDao.updatePresentCard(presentCard);
+
+				return GlobalVariables.USE_CARD_SUCCESS; // return 1
+			}
+			// 이미 사용한 카드라면
+			else {
+				return GlobalVariables.USED_CARD_ERROR; // return -2
+			}
+		}
+		// 해당 index의 선물카드가 없으면
+		else {
+			return GlobalVariables.NONE_CARD_ERROR; // return -1
+		}
+	}
+
+
+
+	/*************** Self Methods ***************/
+
+	/**
+	 * 선물카드를 저장하는 Method
+	 * 
+	 * @param int index
+	 * @return int - 상황에 따른 error 코드
+	 * 
+	 */
+	private boolean saveGiftCard(String senderId, String message) {
+		List<PresentCardModel> presentCards = presentCardDao.getPresentCardsById(senderId);
+		int index = presentCards.get(presentCards.size()-1).getIndex();
+		
+		try {
+			BufferedImage image = ImageIO.read(new File(GlobalVariables.GIFTCARD_PATH_IN_SERV + "giftbox_letter.png"));
+			Graphics g = image.createGraphics();
+			g.setFont(new Font("Courier", Font.CENTER_BASELINE, 11));
+			g.setColor(Color.BLACK);
+			g.drawString(message, 100, 200);
+			
+			ImageIO.write(image, "png", new File(GlobalVariables.GIFTCARD_PATH_IN_SERV + index + "giftcard.png"));
+			ImageIO.write(image, "png", new File(GlobalVariables.GIFTCARD_BACKUP_PATH_IN_SERV + index + "giftcard.png"));
+		} catch (IOException e) {
+			System.out.println(e.toString());
+			return false;
+		}
+
+		return true;
+	}
+	
+	
+	
+	/**
+	 * 선물카드의 바코드 그림을 저장하는 method
+	 * 
+	 * @param String senderId
+	 * @return boolean
+	 * 
+	 */
+	private boolean saveGiftCardBarcode(String senderId) {
+		List<PresentCardModel> presentCards = presentCardDao.getPresentCardsById(senderId);
+		int index = presentCards.get(presentCards.size()-1).getIndex();
+		String barcodeNumber = index + "";
+		String barcodeImgUrl = barcodeNumber + "giftcardBarcode.png";
+		
+		try {
+			Barcode barcode = BarcodeFactory
+					.createCode39(barcodeNumber, true);
+			File file = new File(GlobalVariables.GIFTCARD_BARCODE_PATH_IN_SERV + barcodeImgUrl);
+			File backupFile = new File(GlobalVariables.GIFTCARD_BARCODE_BACKUP_PATH_IN_SERV + barcodeImgUrl);
+			
+			BarcodeImageHandler.savePNG(barcode, file);
+			BarcodeImageHandler.savePNG(barcode, backupFile);
+		} catch (BarcodeException e) {
+			return false;
+		} catch (OutputException e) {
+			return false;
+		}
+
+		return true;
+	}
+}

@@ -1,0 +1,98 @@
+package ghost.android.hisbeans.presentcard;
+
+import java.sql.Date;
+
+/**
+ * @author SeungMin
+ * @email rfrost77@gmail.com
+ * @classname PresentCardModel.java
+ * @package ghost.android.hisbeans.presentcard
+ * @date 2012. 7. 20. 오후 12:45:52
+ * @purpose : Present Card의 DB과 매치되는 Model Class
+ *
+ * @comment : 
+ *
+ */
+
+public class PresentCardModel {
+	private int index;
+	private String senderId;
+	private String receiverPhoneNum;
+	private String menu;
+	private String message;
+	private Date date;
+	private int usedFlag;
+	
+	/*** Constructors ***/
+	public PresentCardModel() {
+		super();
+	}
+
+	public PresentCardModel(String senderId, String receiverPhoneNum,
+			String menu, String message, Date date, int usedFlag) {
+		super();
+		this.senderId = senderId;
+		this.receiverPhoneNum = receiverPhoneNum;
+		this.menu = menu;
+		this.message = message;
+		this.date = date;
+		this.usedFlag = usedFlag;
+	}
+
+	public PresentCardModel(int index, String senderId,
+			String receiverPhoneNum, String menu, String message, Date date,
+			int usedFlag) {
+		super();
+		this.index = index;
+		this.senderId = senderId;
+		this.receiverPhoneNum = receiverPhoneNum;
+		this.menu = menu;
+		this.message = message;
+		this.date = date;
+		this.usedFlag = usedFlag;
+	}
+
+	/*** Getter and Setters ***/
+	public int getIndex() {
+		return index;
+	}
+	public void setIndex(int index) {
+		this.index = index;
+	}
+	public String getSenderId() {
+		return senderId;
+	}
+	public void setSenderId(String senderId) {
+		this.senderId = senderId;
+	}
+	public String getReceiverPhoneNum() {
+		return receiverPhoneNum;
+	}
+	public void setReceiverPhoneNum(String receiverPhoneNum) {
+		this.receiverPhoneNum = receiverPhoneNum;
+	}
+	public String getMenu() {
+		return menu;
+	}
+	public void setMenu(String menu) {
+		this.menu = menu;
+	}
+	public String getMessage() {
+		return message;
+	}
+	public void setMessage(String message) {
+		this.message = message;
+	}
+	public Date getDate() {
+		return date;
+	}
+	public void setDate(Date date) {
+		this.date = date;
+	}
+	public int getUsedFlag() {
+		return usedFlag;
+	}
+	public void setUsedFlag(int usedFlag) {
+		this.usedFlag = usedFlag;
+	}
+}

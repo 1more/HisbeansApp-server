@@ -1,0 +1,63 @@
+package ghost.android.hisbeans;
+
+/**
+ * @author SeungMin
+ * @email rfrost77@gmail.com
+ * @classname GlobalVariables.java
+ * @package ghost.android.hisbeans
+ * @date 2012. 7. 9. 오후 4:14:44
+ * @purpose : GLobal Variables
+ *
+ * @comment : 
+ *
+ */
+
+public class GlobalVariables {
+
+	/*************** user 관련 상수 ***************/
+
+	public static final int ID_DUPLI_ERROR = -1;
+	public static final int EMAIL_DUPLI_ERROR = -2;
+	public static final int PHONENUM_DUPLI_ERROR = -3;
+	public static final int ENCRYPT_ERROR = -4;
+	public static final int BARCODE_ERROR = -5;
+
+	public static final int LOGIN_FAIL = -1;
+
+	public static final int SIGN_UP_SUCCESS = 1;
+	public static final int LOGIN_SUCCESS = 1;
+	public static final int BARCODE_MAKE_SUCCESS = 1;
+
+	public static final String CODE_ALREADY_EXIST = "exist";
+
+
+	
+	/*************** user 관련 상수 ***************/
+
+	public static final int NONE_CARD_ERROR = -1;
+	public static final int USED_CARD_ERROR = -2;
+	public static final int USE_CARD_SUCCESS = 1;
+
+	
+	
+	/*************** User barcode 위치 ***********/
+	public static final String BARCODE_PATH_IN_SERV = "E:/apache-tomcat-7.0.29/webapps/HisbeansServer/resources/barcodes/";
+	public static final String BARCODE_PATH_IN_REMO = "resources/barcodes/";
+	public static final String BARCODE_BACKUP_PATH_IN_SERV = "E:/apache-tomcat-7.0.29/webapps/Hisbeans/backup/barcodes/";
+	
+	public static final String GIFTCARD_PATH_IN_SERV = "E:/apache-tomcat-7.0.29/webapps/HisbeansServer/resources/giftcards/";
+	public static final String GIFTCARD_PATH_IN_REMO = "resources/giftcards/";
+	public static final String GIFTCARD_BACKUP_PATH_IN_SERV = "E:/apache-tomcat-7.0.29/webapps/Hisbeans/backup/giftcards/";
+	
+	public static final String GIFTCARD_BARCODE_PATH_IN_SERV = "E:/apache-tomcat-7.0.29/webapps/HisbeansServer/resources/giftcards/barcodes/";
+	public static final String GIFTCARD_BARCODE_PATH_IN_REMO = "resources/giftcards/barcodes/";
+	public static final String GIFTCARD_BARCODE_BACKUP_PATH_IN_SERV = "E:/apache-tomcat-7.0.29/webapps/Hisbeans/backup/giftcards/barcodes/";
+	
+	
+	/************* 인증 번호 관련 *******************/
+	public static final String ADMIN_MAIL = "hyangki.people@gmail.com";
+	public static final String ADMIN_PHONE = "0542624620";
+	public static final String ADMIN_EMAIL_HOST = "smtp.gmail.com";
+	public static final String ADMIN_EMAIL_ID = "hyangki.people";
+	public static final String ADMIN_EMAIL_PASSWORD = "hyangki2540";
+}

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ghost.android.hisbeans.noticeboard">
+
+	<select id="getAllNotices" resultType="ghost.android.hisbeans.noticeboard.NoticeBoardModel">
+		SELECT `document_srl`, `title`, `title_bold`, `title_color`, `content`, `readed_count`, `voted_count`, `regdate`
+		FROM `xe_documents`
+		WHERE `module_srl` = 103
+	</select>
+
+</mapper>

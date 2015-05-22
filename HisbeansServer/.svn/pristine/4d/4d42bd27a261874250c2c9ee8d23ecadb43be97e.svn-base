@@ -1,0 +1,394 @@
+package ghost.android.hisbeans.user;
+
+import ghost.android.hisbeans.GlobalVariables;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.util.FileCopyUtils;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+/**
+ * @author SeungMin
+ * @email rfrost77@gmail.com
+ * @classname UserController.java
+ * @package ghost.android.hisbeans.user
+ * @date 2012. 7. 17. 오후 4:06:51
+ * @purpose : Client로부터 Request를 URL 형태로 받아 userService가 수행하는 Method들을 수행시키고 결과를 return하는 Controller
+ *
+ * @comment : 
+ *
+ */
+
+@Controller
+public class UserController {
+	@Autowired
+	private UserService userService;
+
+
+
+	/************ Controller Methods ***************/
+	
+	/** 중복된 ID가 있는지 검사하는 method
+	 * 
+	 * @param id : HTTP-GET parameter. 
+	 * 			ex) http://localhost:8080/HisbeansServer/checkDupId.html?id=d
+	 * @return bool - true or false
+	 * 
+	 */
+	@RequestMapping(value = "checkDupId", method = RequestMethod.GET)
+	public ModelAndView checkDupId(@RequestParam("id") String id){
+		boolean result = userService.checkDupId(id);
+
+		return new ModelAndView("jsonView", "isUsable", result);
+	}
+	
+	/** 중복된 ID가 있는지 검사하는 method
+	 * 
+	 * @param id : HTTP-GET parameter. 
+	 * 			ex) http://localhost:8080/HisbeansServer/checkDupPhoneEmail.html?phone=d&email=d
+	 * @return bool - true or false
+	 * 
+	 */
+	@RequestMapping(value = "checkDupPhoneEmail", method = RequestMethod.GET)
+	public ModelAndView checkDupPhoneEmail(@RequestParam("phone") String phone, @RequestParam("email") String email){
+		String phoneNum;
+		
+		if(phone.charAt(0) == '0')
+			phoneNum = phone.substring(1);
+		else
+			phoneNum = phone;
+		
+		boolean result = userService.checkDupPhoneEmail(phoneNum, email);
+		
+		
+
+		return new ModelAndView("jsonView", "isUsable", result);
+	}
+	
+	
+
+	/** barcode number과 img를 생성하는 method
+	 * 
+	 * @param id, password, name, email, phoneNum : HTTP-GET parameter. 
+	 * 			ex) http://localhost:8080/HisbeansServer/joinOnWeb.html?id=d
+	 * @return int - (error code) to jsonView
+	 * 
+	 */
+	@RequestMapping(value = "joinOnWeb", method = RequestMethod.GET)
+	public ModelAndView joinOnWebMethod(@RequestParam("id") String id){
+		int result = userService.makeBarcode(id);
+
+		return new ModelAndView("jsonView", "joinOnWeb", result);
+	}
+
+
+
+	/**
+	 * @param id
+	 * 				ex) http://localhost:8080/HisbeansServer/getBarcode.html?id=d
+	 * @return barcode object
+	 */
+	@RequestMapping(value="getBarcode", method = RequestMethod.GET)
+	public ModelAndView getBarcodeById(@RequestParam("id") String id){
+		UserBarcodeModel result = userService.getBarcodeNumber(id);
+
+		return new ModelAndView("jsonView", "getBarcode", result);
+	}
+
+
+	/** 회원가입 Method
+	 * 
+	 * @param id, password, name, email, phoneNum : HTTP-GET parameter. 
+	 * 			ex) http://localhost:8080/HisbeansServer/signUp.html?id=d&email=d&password=d&name=d&phoneNum=d
+	 * @return boolean to jsonView
+	 * 
+	 */
+	@RequestMapping(value = "signUp", method = RequestMethod.POST)
+	public ModelAndView signUpMethod(org.springframework.web.context.request.WebRequest webRequest){
+		String id = webRequest.getParameter("id");
+		String pw = webRequest.getParameter("password");
+		String email = webRequest.getParameter("email");
+		String name = webRequest.getParameter("name");
+		String pNum = webRequest.getParameter("phoneNum");
+
+		String phoneNum;
+		
+		if(pNum.charAt(0) == '0')
+			phoneNum = pNum.substring(1);
+		else
+			phoneNum = pNum;
+
+		int result = GlobalVariables.SIGN_UP_SUCCESS;
+
+		try{
+			result = userService.signUp(id, email, pw, name, phoneNum);
+		} catch(MakeBarcodeException e){
+			result = GlobalVariables.BARCODE_ERROR; // return -4
+		}
+		
+		System.out.println("result(1 for success): "+result);
+
+		return new ModelAndView("jsonView", "signUp", result);
+	}
+
+
+
+	/** Login Method
+	 * 
+	 * @param id, password : HTTP-POST parameter. 
+	 * 			ex) http://localhost:8080/HisbeansServer/login.html
+	 * @return boolean to jsonView
+	 * 
+	 */
+	@RequestMapping(value = "login", method = RequestMethod.POST)
+	public ModelAndView loginMethod(org.springframework.web.context.request.WebRequest webRequest){
+		String id = webRequest.getParameter("id");
+		String pw = webRequest.getParameter("password");
+
+		Map<String,String> result = userService.login(id, pw);
+
+		return new ModelAndView("jsonView", "login", result);
+	}
+
+
+
+	/** Sign Out Mehtod
+	 * 
+	 * @param id : HTTP-GET parameter. 
+	 * 			ex) http://localhost:8080/HisbeansServer/signOut.html?id=d&barcodeNum=d
+	 * @return true to jsonView
+	 * 
+	 */
+	@RequestMapping(value = "signOut", method = RequestMethod.GET)
+	public ModelAndView signOutMethod(@RequestParam("id") String id){
+		boolean result = userService.signOut(id);
+
+		return new ModelAndView("jsonView", "signOut", result);
+	}
+
+
+
+	/** name과 email로 id찾기 Mehtod
+	 * 
+	 * @param name email : HTTP-GET parameter. 
+	 * 			ex) http://localhost:8080/HisbeansServer/findIdByNameEmail.html?name=d&email=d
+	 * @return result string - (id) to jsonView
+	 * 
+	 */
+	@RequestMapping(value = "findIdByNameEmail", method = RequestMethod.GET)
+	public ModelAndView findIdByNameEmailMethod(@RequestParam("name") String name, @RequestParam("info") String email){
+		String result = userService.findIdByEmail(name, email);
+
+		return new ModelAndView("jsonView", "findIdByNameEmail", result);
+	}
+
+
+
+	/** name과 phoneNum로 id찾기 Mehtod
+	 * 
+	 * @param name phoneNum : HTTP-GET parameter. 
+	 * 			ex) http://localhost:8080/HisbeansServer/findIdByNamePhoneNum.html?name=d&phoneNum=d
+	 * @return result string - (id) to jsonView
+	 * 
+	 */
+	@RequestMapping(value = "findIdByNamePhoneNum", method = RequestMethod.GET)
+	public ModelAndView findIdByNamePhoneNumMethod(@RequestParam("name") String name, @RequestParam("info") String pNum){
+		String phoneNum = pNum.substring(1);
+		String result = userService.findIdByPhoneNum(name, phoneNum);
+
+		return new ModelAndView("jsonView", "findIdByNamePhoneNum", result);
+	}
+
+
+
+	/** id, name과 email로 password찾기 Mehtod
+	 * 
+	 * @param id name email : HTTP-GET parameter. 
+	 * 			ex) http://localhost:8080/HisbeansServer/findPasswordByIdNameEmail.html?id=d&name=d&email=d
+	 * @return result string - (id) to jsonView
+	 * 
+	 */
+	@RequestMapping(value = "findPasswordByIdNameEmail", method = RequestMethod.GET)
+	public ModelAndView findPasswordByIdNameEmailMethod(@RequestParam("id") String id, 
+			@RequestParam("name") String name, @RequestParam("info") String email){
+		boolean result = userService.findPasswordByEmail(id, name, email);
+
+		return new ModelAndView("jsonView", "findPasswordByIdNameEmail", result);
+	}
+
+
+
+	/** id, name과 phoneNum로 password찾기 Mehtod
+	 * 
+	 * @param id name email : HTTP-GET parameter. 
+	 * 			ex) http://localhost:8080/HisbeansServer/findPasswordByIdNamePhoneNum.html?id=d&name=d&phoneNum=d
+	 * @return result string - (id) to jsonView
+	 * 
+	 */
+	@RequestMapping(value = "findPasswordByIdNamePhoneNum", method = RequestMethod.GET)
+	public ModelAndView findPasswordByIdNamePhoneNumMethod(@RequestParam("id") String id, 
+			@RequestParam("name") String name, @RequestParam("info") String pNum){
+		String phoneNum = pNum.substring(1);
+		boolean result = userService.findPasswordByPhoneNum(id, name, phoneNum);
+
+		return new ModelAndView("jsonView", "findPasswordByIdNamePhoneNum", result);
+	}
+
+
+
+	/** 회원의 정보를 수정하는 Mehtod
+	 * 
+	 * @param id email password phoneNum : HTTP-GET parameter. 
+	 * 			ex) http://localhost:8080/HisbeansServer/modifyUser.html?id=d&email=d&password=d&phoneNum=d
+	 * @return result string - (id) to jsonView
+	 * 
+	 */
+	@RequestMapping(value = "modifyUser", method = RequestMethod.GET)
+	public ModelAndView modifyUserMethod(@RequestParam("id") String id, @RequestParam("email") String email, 
+			@RequestParam("phoneNum") String pNum){
+		String phoneNum = pNum.substring(1);
+		boolean result = userService.modifyUser(id, email, phoneNum);
+
+		return new ModelAndView("jsonView", "modifyUser", result);
+	}
+
+
+
+	/** 회원의 비밀번호를 수정하는 Mehtod
+	 * 
+	 * @param id password : HTTP-POST parameter. 
+	 * 			ex) http://localhost:8080/HisbeansServer/modifyPassword.html
+	 * @return result string - (id) to jsonView
+	 * 
+	 */
+	@RequestMapping(value = "modifyPassword", method = RequestMethod.POST)
+	public ModelAndView modifyPasswordMethod(org.springframework.web.context.request.WebRequest webRequest){
+		String id = webRequest.getParameter("id");
+		String validCode = webRequest.getParameter("validCode");
+		String password = webRequest.getParameter("newPassword");
+
+		boolean result = userService.modifyPassword(id, validCode, password);
+
+		return new ModelAndView("jsonView", "modifyPassword", result);
+	}
+
+
+
+	/** 회원의 비밀번호를 수정하는 Mehtod
+	 * 
+	 * @param id password : HTTP-POST parameter. 
+	 * 			ex) http://localhost:8080/HisbeansServer/modifyPasswordWithNoneValid.html
+	 * @return result string - (id) to jsonView
+	 * 
+	 */
+	@RequestMapping(value = "modifyPasswordWithNoneValid", method = RequestMethod.POST)
+	public ModelAndView modifyPasswordWithNoneValidMethod(org.springframework.web.context.request.WebRequest webRequest){
+		String id = webRequest.getParameter("id");
+		String password = webRequest.getParameter("newPassword");
+
+		boolean result = userService.modifyPasswordWithNoneValid(id, password);
+
+		return new ModelAndView("jsonView", "modifyPasswordWithNoneValid", result);
+	}
+	
+	
+	
+	/**
+	 * @param validCode
+	 * @param email
+	 * 				ex) http://localhost:8080/HisbeansServer/validateForMail.html?id=a&email=a@b.c
+	 * @return true for success to jsonView
+	 */
+	@RequestMapping(value = "validateForMail", method = RequestMethod.GET)
+	public ModelAndView validateForMailMethod(@RequestParam("id") String id, @RequestParam("email") String email){
+		boolean result = userService.validateForMail(id, email);
+
+		if(result == true){
+			userService.sleepAndRemoveValideCode(id);
+		}
+
+		return new ModelAndView("jsonView", "validateForMail", result);
+	}
+
+
+	/**
+	 * @param validCode
+	 * @param pNum
+	 * 			ex) http://localhost:8080/HisbeansServer/validateForPhone.html?validCode=4283&phoneNum=01027160863
+	 * @return
+	 */
+	@RequestMapping(value = "validateForPhone", method = RequestMethod.GET)
+	public ModelAndView validateForPhoneMethod(@RequestParam("id") String id, @RequestParam("phoneNum") String pNum){
+		boolean result = userService.validateForPhone(id, pNum);
+
+		if(result == true){
+			userService.sleepAndRemoveValideCode(id);
+		}
+
+		return new ModelAndView("jsonView", "validateForPhone", result);
+	}
+
+
+	/** 인증코드를 확인하는 Mehtod
+	 * 
+	 *  @param id password : HTTP-POST parameter. 
+	 * 			ex) http://localhost:8080/HisbeansServer/validate.html
+	 *  @return result string - (id) to jsonView
+	 * 
+	 */
+	@RequestMapping(value = "validate", method = RequestMethod.POST)
+	public ModelAndView validateMethod(org.springframework.web.context.request.WebRequest webRequest){
+		String id = webRequest.getParameter("id");
+		String validCode = webRequest.getParameter("validCode");
+
+		boolean result = userService.checkValidCode(id, validCode);
+
+		return new ModelAndView("jsonView", "validate", result);
+	}
+	
+	
+	
+	/** 사용자 바코드 이미지를 리턴하는 Method
+	 * 
+	 *  @param barcodeURL : HTTP-POST parameter. 
+	 * 			ex) http://localhost:8080/HisbeansServer/getUserBarcode.html
+	 *  @return File barcode
+	 * 
+	 */
+	@RequestMapping(value = "getUserBarcode", method = RequestMethod.POST)
+	@ResponseBody
+	public ModelAndView getUserBarcodeMethod(org.springframework.web.context.request.WebRequest webRequest, HttpServletResponse response){
+		String barcodeURL = webRequest.getParameter("barcodeURL");
+		
+		File barcode = new File(GlobalVariables.BARCODE_PATH_IN_SERV + barcodeURL);
+
+		response.setHeader("Content-Length", Long.toString(barcode.length()));
+		response.setHeader("Content-Transfer-Encoding", "binary");
+		response.setHeader("Content-Disposition", "attachment;fileName=\""+barcodeURL+"\";");	
+		
+		InputStream is = null;
+		try {
+			is = new FileInputStream(barcode);
+			FileCopyUtils.copy(is, response.getOutputStream());
+		} catch (FileNotFoundException e1) {
+			e1.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		return null;
+	}
+}

@@ -1,0 +1,72 @@
+package ghost.android.hisbeans.presentcard;
+
+import java.sql.Date;
+
+/**
+ * @author Hyeonwook
+ * @email khw0867@gmail.com
+ * @classname PresentCardMenuModel.java
+ * @package ghost.android.hisbeans.presentcard
+ * @purpose : Present Card의 Menus DB과 매치되는 Model Class
+ *
+ * @comment : 
+ *
+ */
+
+public class PresentCardMenuModel {
+	private int index;
+	private String menu_ko;
+	private String menu_en;
+	private int price;
+	private String type;
+	
+	
+	/*** Constructors ***/
+	public PresentCardMenuModel() {
+		super();
+	}
+	public PresentCardMenuModel(int index, String menu_ko, String menu_en, int price,
+			String type) {
+		super();
+		this.index = index;
+		this.menu_ko = menu_ko;
+		this.menu_en = menu_en;
+		this.price = price;
+		this.type = type;
+	}
+
+	
+
+	/*** Getter and Setters ***/
+	public int getIndex() {
+		return index;
+	}
+	public void setIndex(int index) {
+		this.index = index;
+	}
+	public String getMenu_ko() {
+		return menu_ko;
+	}
+	public void setMenu_ko(String menu_ko) {
+		this.menu_ko = menu_ko;
+	}
+	public String getMenu_en() {
+		return menu_en;
+	}
+	public void setMenu_en(String menu_en) {
+		this.menu_en = menu_en;
+	}
+	public int getPrice() {
+		return price;
+	}
+	public void setPrice(int price) {
+		this.price = price;
+	}
+	public String getType() {
+		return type;
+	}
+	public void setType(String type) {
+		this.type = type;
+	}
+	
+}

@@ -1,0 +1,144 @@
+package ghost.android.hisbeans.presentcard;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.ModelAndView;
+
+/**
+ * @author SeungMin
+ * @email rfrost77@gmail.com
+ * @classname PresentCardController.java
+ * @package ghost.android.hisbeans.presentcard
+ * @date 2012. 7. 19. 오후 6:14:32
+ * @purpose : Client로부터 Request를 URL 형태로 받아 presentCardService가 수행하는 Method들을 수행시키고 결과를 return하는 Controller
+ *
+ * @comment : 
+ *
+ */
+
+@Controller
+public class PresentCardController {
+	@Autowired
+	private PresentCardService presentCardService;
+	
+	
+	
+	/************ Controller Methods ***************/
+	
+	/** 선물카드를 선물하는 Mehtod
+	 * 
+	 * @param senderId, receiverPhoneNum, menu, message
+	 * 			ex) http://localhost:8080/HisbeansServer/present.html?senderId=d&receiverPhoneNum=d&menu=d&message=7
+	 * @return boolean to jsonView
+	 * 
+	 */
+	@RequestMapping(value = "present", method = RequestMethod.GET)
+	public ModelAndView presentMethod(@RequestParam("senderId") String senderId, @RequestParam("receiverPhoneNum") String receiverPhoneNum, 
+			@RequestParam("menu") String menu, @RequestParam("message") String message){
+		boolean result = true;
+		
+		try{
+			result = presentCardService.present(senderId, receiverPhoneNum, menu, message);
+		}
+		catch(PresentCardSaveException e){
+			result = false;
+		}
+		
+//		// send the present card with sms to receiver
+//		if(result == true){
+//			// make proper code for the present card
+//			String code = /* something here */"test";
+//			String text = "" + code;
+//			
+//			String senderPhoneNum = "01027160863";	// temp phone number
+//			
+//			// send sms
+//			UTF8SmsSender smsSender = new UTF8SmsSender(receiverPhoneNum, senderPhoneNum, text);
+//			smsSender.sendSms();
+//		}
+		
+		return new ModelAndView("jsonView", "present", result);
+	}
+	
+	
+	
+	/** Sender의 입장으로 지금까지 보낸 선물카드 history를 받는 method
+	 * 
+	 * @param id
+	 * 			ex) http://localhost:8080/HisbeansServer/getPresentCardsAsSender.html?id=d
+	 * @return List<Map<String, PresentCardModel>> to jsonView
+	 * 
+	 */
+	@RequestMapping(value = "getPresentCardsAsSender", method = RequestMethod.GET)
+	public ModelAndView getPresentCardsAsSenderMethod(@RequestParam("id") String id){
+		List<PresentCardModel> presentCards = presentCardService.getPresentCardsAsSender(id);
+		List<Map<String, PresentCardModel>> retData = new ArrayList<Map<String, PresentCardModel>>();
+		
+		for(int i=0 ; i<presentCards.size() ; i++){
+			Map<String, PresentCardModel> map = new HashMap<String,  PresentCardModel>();
+			map.put(i+"", presentCards.get(i));
+			retData.add(map);
+		}
+		
+		return new ModelAndView("jsonView", "getPresentCardsAsSender", retData);
+	}
+	
+	
+	
+	/** receiver의 입장으로 지금까지 보낸 선물카드 history를 받는 method
+	 * 
+	 * @param id
+	 * 			ex) http://localhost:8080/HisbeansServer/getPresentCardsAsReceiver.html?phoneNum=d
+	 * @return List<Map<String, PresentCardModel>> to jsonView
+	 * 
+	 */
+	@RequestMapping(value = "getPresentCardsAsReceiver", method = RequestMethod.GET)
+	public ModelAndView getPresentCardsAsReceiverMethod(@RequestParam("phoneNum") String phoneNum){
+		List<PresentCardModel> presentCards = presentCardService.getPresentCardsAsReceiver(phoneNum);
+		List<Map<String, PresentCardModel>> retData = new ArrayList<Map<String, PresentCardModel>>();
+		
+		for(int i=0 ; i<presentCards.size() ; i++){
+			Map<String, PresentCardModel> map = new HashMap<String,  PresentCardModel>();
+			map.put(i+"", presentCards.get(i));
+			retData.add(map);
+		}
+		
+		return new ModelAndView("jsonView", "getPresentCardsAsReceiver", retData);
+	}
+	
+	/**
+	 * @param index
+	 * 			ex) http://localhost:8080/HisbeansServer/getPresentCardWithIndex.html?index=7
+	 * @return PresentCardModel to jsonView
+	 */
+	@RequestMapping(value = "getPresentCardWithIndex", method = RequestMethod.GET)
+	public ModelAndView getPresentCardWithIndex(@RequestParam("index") String index){
+		PresentCardModel presentCard = presentCardService.getPresentCardWithIndex(index);
+		
+		return new ModelAndView("jsonView", "getPresentCardWithIndex", presentCard);
+	}
+	
+	
+	
+	/** 선물카드를 사용하는 Method
+	 * 
+	 * @param int index
+	 * 			ex) http://localhost:8080/HisbeansServer/usePresentCard.html?index=3
+	 * @return int - (error or success code) to jsonView
+	 * 
+	 */
+	@RequestMapping(value = "usePresentCard", method = RequestMethod.GET)
+	public ModelAndView usePresentCardMethod(@RequestParam("index") int index){
+		int result = presentCardService.usePresentCard(index);
+		
+		return new ModelAndView("jsonView", "usePresentCard", result);
+	}
+}

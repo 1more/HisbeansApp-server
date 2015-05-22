@@ -1,0 +1,5 @@
+package ghost.android.hisbeans.presentcard;
+
+public class PresentCardSaveException extends RuntimeException {
+
+}

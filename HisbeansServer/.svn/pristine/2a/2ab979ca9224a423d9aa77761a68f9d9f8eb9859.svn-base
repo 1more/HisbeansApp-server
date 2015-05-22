@@ -1,0 +1,5 @@
+package ghost.android.hisbeans.coffeestamp;
+
+public class NoUseableStampcardException extends RuntimeException {
+
+}

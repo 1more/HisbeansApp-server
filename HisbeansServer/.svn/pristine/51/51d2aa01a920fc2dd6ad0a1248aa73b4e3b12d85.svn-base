@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ghost.android.hisbeans.coffeestamp">
+
+	<select id="getStampCards" parameterType="String" resultType="ghost.android.hisbeans.coffeestamp.CoffeeStampModel">
+		SELECT * 
+		FROM coffeeStamp 
+		WHERE userBarcodeNum = #{barcodeNum}
+	</select>
+	
+	<select id="getCurrentStampCard" parameterType="String" resultType="ghost.android.hisbeans.coffeestamp.CoffeeStampModel">
+		SELECT *
+		FROM coffeeStamp
+		WHERE userBarcodeNum = #{barcodeNum} AND usedFlag = 0 AND counts &lt; 10
+		LIMIT 1
+	</select>
+
+	<select id="getUseableStampCard" parameterType="String" resultType="ghost.android.hisbeans.coffeestamp.CoffeeStampModel">
+		SELECT *
+		FROM coffeeStamp
+		WHERE userBarcodeNum = #{barcodeNum} AND usedFlag = 0 AND counts = 10
+		LIMIT 1
+	</select>
+	
+	<update id="addCoffeeStamp" parameterType="map">
+		UPDATE coffeeStamp
+		SET counts = counts + #{count}
+		WHERE `index` = #{index}
+	</update>
+	
+	<update id="updateUsedFlag" parameterType="int">
+		UPDATE coffeeStamp 
+		SET usedFlag = 1, usedDate = now()
+		WHERE `index` = #{index}
+	</update>
+	
+	<insert id="addStampCard" parameterType="String">
+		INSERT INTO coffeeStamp (userBarcodeNum, counts, usedFlag)
+		VALUES (#{barcodeNum}, 0, 0)
+	</insert>
+	
+	<delete id="deleteCoffeeStamp" parameterType="string">
+		DELETE FROM coffeeStamp
+		WHERE userBarcodeNum = #{barcodeNum}
+	</delete>
+	
+</mapper>

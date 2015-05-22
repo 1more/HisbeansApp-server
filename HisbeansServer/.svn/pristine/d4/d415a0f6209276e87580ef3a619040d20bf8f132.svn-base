@@ -1,0 +1,45 @@
+package ghost.android.hisbeans.setting;
+
+import org.springframework.transaction.annotation.Transactional;
+
+
+
+/**
+ * @author SeungMin
+ * @email rfrost77@gmail.com
+ * @classname SettingServiceImpl.java
+ * @package ghost.android.hisbeans.setting
+ * @date 2012. 8. 7. 오후 5:55:52
+ * @purpose : 
+ *
+ * @comment : 
+ *
+ */
+@Transactional
+public class SettingServiceImpl implements SettingService{
+	private SettingDao settingDao;
+
+	public void setSettingDao(SettingDao settingDao) {
+		this.settingDao = settingDao;
+	}
+
+	
+	
+	/*************** Override Methods ***************/
+	
+	public String getVersion() {
+		return settingDao.getVersion();
+	}
+
+	public String getIsShow() {
+		return settingDao.getIsShow();
+	}
+
+	public String getNotice() {
+		return settingDao.getNotice();
+	}
+
+	public NoticesModel getNotices() {
+		return settingDao.getNotices();
+	}
+}

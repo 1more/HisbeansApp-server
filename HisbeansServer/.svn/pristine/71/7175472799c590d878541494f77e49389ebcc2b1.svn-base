@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ghost.android.hisbeans.user.UserDao">
+
+	<insert id="addUser" parameterType="map">
+		INSERT INTO
+		xe_member(member_srl, user_id, email_address, password, email_id, email_host, user_name, nick_name, allow_mailing, allow_message, phone, list_order)
+		SELECT MAX(member_srl)+2, #{user.id}, #{user.email}, #{user.password}, #{user.emailId}, #{user.emailHost}, #{user.name}, #{user.name}, 'Y', 'Y', #{user.phoneNum}, (MAX(member_srl)+2)*(-1)
+		FROM xe_member;
+	</insert>
+	
+	<insert id="addBarcode" parameterType="map">
+		INSERT INTO userbarcode(user_id, barcodeNum, barcodeImgUrl)
+		VALUES(#{barcode.id}, #{barcode.barcodeNum}, #{barcode.barcodeImgUrl})
+	</insert>
+	
+	<insert id="genValidCode" parameterType="map">
+		INSERT INTO validcodes(id, validCode)
+		VALUES(#{id}, #{validCode})
+	</insert>
+	
+	<select id="getProperName" parameterType="string" resultType="string">
+		SELECT user_name
+		FROM xe_member
+		WHERE user_id = #{id}
+	</select>
+	
+	<select id="getProperNickname" parameterType="string" resultType="string">
+		SELECT nick_name
+		FROM xe_member
+		WHERE user_id = #{id}
+	</select>
+	
+	<select id="getProperMemberSrl" parameterType="string" resultType="int">
+		SELECT member_srl
+		FROM xe_member
+		WHERE user_id = #{id}
+	</select>
+	
+	<select id="getBarcodeNum" parameterType="string" resultType="ghost.android.hisbeans.user.UserBarcodeModel">
+		SELECT *
+		FROM userbarcode
+		WHERE user_id=#{id}
+	</select>
+		
+	<select id="getUserById" parameterType="string" resultMap="UserModelResult">
+		SELECT * 
+		FROM xe_member
+		WHERE user_id = #{id}
+	</select>
+	
+	<select id="getUserByEmail" parameterType="string" resultMap="UserModelResult">
+		SELECT * 
+		FROM xe_member
+		WHERE email_address = #{email}
+	</select>
+	
+	<select id="getUserByNamePhoneNum" parameterType="map" resultMap="UserModelResult">
+		SELECT * 
+		FROM xe_member
+		WHERE user_name = #{name} AND phone = #{phoneNum}
+	</select>
+	
+	<select id="getUserByIdNamePhoneNum" parameterType="map" resultMap="UserModelResult">
+		SELECT * 
+		FROM xe_member
+		WHERE user_id = #{id} AND user_name = #{name} AND phone = #{phoneNum}
+	</select>
+	
+	<select id="getUserByPhoneNum" parameterType="string" resultMap="UserModelResult">
+		SELECT * 
+		FROM xe_member
+		WHERE phone = #{phoneNum}
+	</select>
+	
+	<select id="getUserByIdPassword" parameterType="map" resultMap="UserModelResult">
+		SELECT * 
+		FROM xe_member
+		WHERE user_id = #{id} AND password = #{password}
+	</select>
+	
+	<select id="getUserByNameEmail" parameterType="map" resultMap="UserModelResult">
+		SELECT * 
+		FROM xe_member
+		WHERE user_name = #{name} AND email_address = #{email}
+	</select>
+	
+	<select id="getUserByIdNameEmail" parameterType="map" resultMap="UserModelResult">
+		SELECT *
+		FROM xe_member
+		WHERE user_id = #{id} AND user_name = #{name} AND email_address = #{email}
+	</select>
+	
+	<select id="getAllUser" resultMap="UserModelResult">
+		SELECT *
+		FROM xe_member
+	</select>
+	
+	<select id="getValidCode" parameterType="string" resultType="string">
+		SELECT validCode
+		FROM validcodes
+		WHERE id = #{id}
+	</select>
+	
+	<delete id="deleteUser" parameterType="string">
+		DELETE FROM xe_member
+		WHERE user_id = #{id}
+	</delete>
+	
+	<delete id="rmvValidCode" parameterType="string">
+		DELETE FROM validcodes
+		WHERE id = #{id}
+	</delete>
+	
+	<update id="updateUser" parameterType="map">
+		UPDATE xe_member
+		SET email_address = #{user.email}, password = #{user.password}, phone = #{user.phoneNum}
+		WHERE user_id = #{user.id}
+	</update>
+	
+	<select id="getPropBarcodeNum" parameterType="string" resultType="string">
+		SELECT barcodeNum
+		FROM userbarcode
+		WHERE barcodeNum &gt; #{pNum}
+		ORDER BY barcodeNum DESC
+		LIMIT 1
+	</select>
+	
+	<select id="getCurrentDate" resultType="string">
+		SELECT CURDATE() * 1
+	</select>
+	
+	<resultMap id="UserModelResult" type="ghost.android.hisbeans.user.UserModel">
+		<result property="id" column="user_id"/>
+		<result property="email" column="email_address"/>
+		<result property="password" column="password"/>
+		<result property="emailId" column="email_id"/>
+		<result property="emailHost" column="email_host"/>
+		<result property="name" column="user_name"/>
+		<result property="phoneNum" column="phone"/>
+	</resultMap>
+ 
+</mapper>

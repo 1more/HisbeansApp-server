@@ -1,0 +1,88 @@
+package ghost.android.hisbeans.coffeestamp;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.ModelAndView;
+
+/**
+ * @author HyeonWook Kim
+ * @email khw0867@gmail.com
+ * @classname CoffeeStampController.java
+ * @package ghost.android.hisbeans.coffeestamp
+ * @date 2012. 7. 16.
+ * @purpose : Controll http-requests related with Coffee stamp cards
+ *
+ */
+
+@Controller
+public class CoffeeStampController {
+	@Autowired
+	private CoffeeStampService coffeeStampService;
+
+	
+	
+	/************ Controller Methods ***************/
+	
+	/**
+	 * 
+	 * @param barcodeNum : HTTP-GET parameter. ex) ~~~/allStamps.html?barcodeNum=20900202
+	 * @return ModelAndView object with stamp card info and view info(json view)
+	 * 
+	 */
+	@RequestMapping(value = "allStamps", method = RequestMethod.GET)
+	public ModelAndView getCards(@RequestParam("barcodeNum") String barcodeNum){
+		List<CoffeeStampModel> coffeeStamps = coffeeStampService.getStampCards(barcodeNum);
+		
+		List<Map<String, CoffeeStampModel>> retData = new ArrayList<Map<String, CoffeeStampModel>>();
+		
+		for(int i=0; i<coffeeStamps.size(); i++){
+			Map<String, CoffeeStampModel> map = new HashMap<String,  CoffeeStampModel>();
+			map.put(i+"", coffeeStamps.get(i));
+			retData.add(map);
+		}
+		
+		return new ModelAndView("jsonView", "cards", retData);
+	}
+	
+	
+	
+	/**
+	 * @param barcodeNum : HTTP-GET parameter.
+	 * @param count : HTTP-GET parameter. ex) ~~~/stampOnCard.html?barcodeNum=20900202&count=1
+	 * @return ModelAndView object with true-false for success to add or not(json view)
+	 */
+	@RequestMapping(value = "stampOnCard", method = RequestMethod.GET)
+	public ModelAndView stampOnCard(@RequestParam("barcodeNum") String barcodeNum, @RequestParam("count") int count){
+		boolean result = coffeeStampService.addCoffeeStamps(barcodeNum, count);
+		
+		return new ModelAndView("jsonView", "stamp", result);
+	}
+
+	
+	
+	/**
+	 * @param barcodeNum : HTTP-GET parameter. ex) ~~~/useStampCard.html?barcodeNum=20900202&count=1
+	 * @param count : number how many stamps wanna use.
+	 * @return ModelAndView object with true-false for success to use or not(json view)
+	 */
+	@RequestMapping(value = "useStampCard", method = RequestMethod.GET)
+	public ModelAndView useStampCard(@RequestParam("barcodeNum") String barcodeNum, @RequestParam("count") int count){
+		boolean result = true;
+		
+		try{
+			result = coffeeStampService.useStampCard(barcodeNum, count);
+		} catch(NoUseableStampcardException e) {
+			result = false;
+		}
+		
+		return new ModelAndView("jsonView", "use", result);
+	}
+}

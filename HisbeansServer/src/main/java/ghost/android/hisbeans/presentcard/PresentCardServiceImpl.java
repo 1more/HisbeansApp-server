@@ -1,0 +1,369 @@
+package ghost.android.hisbeans.presentcard;
+
+import ghost.android.hisbeans.GlobalVariables;
+import ghost.android.hisbeans.user.UserDao;
+
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.Random;
+
+import javax.imageio.ImageIO;
+
+import net.sourceforge.barbecue.Barcode;
+import net.sourceforge.barbecue.BarcodeException;
+import net.sourceforge.barbecue.BarcodeFactory;
+import net.sourceforge.barbecue.BarcodeImageHandler;
+import net.sourceforge.barbecue.output.OutputException;
+
+import org.springframework.transaction.annotation.Transactional;
+
+/**
+ * @author SeungMin
+ * @email rfrost77@gmail.com
+ * @classname PresentCardServiceImpl.java
+ * @package ghost.android.hisbeans.presentcard
+ * @date 2012. 7. 24. 오전 2:53:05
+ * @purpose : implements 선물카드 Service using PresentCardService
+ * 
+ * @comment :
+ * 
+ */
+
+@Transactional
+public class PresentCardServiceImpl implements PresentCardService {
+	private PresentCardDao presentCardDao;
+	private UserDao userDao;
+
+	public void setPresentCardDao(PresentCardDao presentCardDao) {
+		this.presentCardDao = presentCardDao;
+	}
+
+	public void setUserDao(UserDao userDao) {
+		this.userDao = userDao;
+	}
+
+	
+	/*************** Override Methods ***************/
+
+	/** 선물카드를 보내는 Method
+	 * 
+	 * @param String
+	 *            senderId, String receiverPhoneNum, String email, String menu,
+	 *            String message
+	 * @return PresentCardModel
+	 *
+	 * @throws PresentCardSaveException when fail saving card-image  
+	 */
+	public PresentCardModel present(String senderId, String receiverPhoneNum,
+			String email, String menu, String message, String receiverName)
+			throws PresentCardSaveException {
+
+		String barcodeNum = this.makeProperBarcodeNum();// value for test. have
+														// to modify this..
+
+		int properIndex = presentCardDao.getPresentCardIndex() + 1;
+
+		String properName = userDao.getProperName(senderId);
+		int properMemberSrl = userDao.getProperMemberSrl(senderId);
+
+		String rcvPhone;
+		if (receiverPhoneNum.charAt(0) == '0') {
+			rcvPhone = receiverPhoneNum.substring(1);
+		} else {
+			rcvPhone = receiverPhoneNum;
+		}
+		
+		PresentCardModel card = new PresentCardModel(properIndex, menu,
+				message, senderId, properName, receiverName, properMemberSrl,
+				email, rcvPhone, barcodeNum, null, null, 0, 0, 0, 0, null,
+				"127.0.0.1", -properIndex, -properIndex);
+
+		presentCardDao.addPresentCard(card);
+
+		if (saveGiftCard(card)) {
+			return card;
+		} else {
+			throw new PresentCardSaveException();
+		}
+	}
+
+	/** 선물카드를 보내는 Method
+	 * 
+	 * @param String
+	 *            id
+	 * @return List<PresentCardModel>
+	 */
+	public List<PresentCardModel> getPresentCardsAsSender(String id) {
+		return presentCardDao.getPresentCardsById(id);
+	}
+
+	/**선물카드를 보내는 Method
+	 * 
+	 * @param String
+	 *            phoneNum
+	 * @return List<PresentCardModel>
+	 */
+	public List<PresentCardModel> getPresentCardsAsReceiver(String phoneNum) {
+		String phone = phoneNum;
+		
+		// remove first zero, if there is.
+		if(phoneNum.charAt(0) == '0'){
+			phone = phoneNum.substring(1);
+		}
+		
+		return presentCardDao.getPresentCardsByPhoneNum(phone);
+	}
+
+	/**선물카드 index를 이용해서 선물카드를 가지고오는 Method
+	 * 
+	 * @param String
+	 *            giftcard_srl
+	 * @return PresentCardModel
+	 */
+	public PresentCardModel getPresentCardWithIndex(String giftcard_srl) {
+		return presentCardDao.getPresentCardByIndex(Integer
+				.parseInt(giftcard_srl));
+	}
+
+	/**선물카드를 보내는 Method
+	 * 
+	 * @param int index
+	 * @return int - 상황에 따른 error 코드
+	 */
+	public int usePresentCard(int giftcard_srl) {
+		PresentCardModel presentCard = presentCardDao
+				.getPresentCardByIndex(giftcard_srl);
+
+		// 해당 giftcard_srl의 선물카드가 있으면
+		if (presentCard != null) {
+			// 사용하지 않은 카드라면
+			if (presentCard.getUsedFlag() == 0) {
+				presentCard.setUsedFlag(1);
+				presentCardDao.updatePresentCard(presentCard);
+
+				return GlobalVariables.USE_CARD_SUCCESS; // return 1
+			}
+			// 이미 사용한 카드라면
+			else {
+				return GlobalVariables.USED_CARD_ERROR; // return -2
+			}
+		}
+		// 해당 giftcard_srl의 선물카드가 없으면
+		else {
+			return GlobalVariables.NONE_CARD_ERROR; // return -1
+		}
+	}
+	
+
+	/**DB에 저장된 모든 메뉴를 return하는 Method
+	 * 
+	 * @return List<PresentCardMenuModel>
+	 */
+	public List<PresentCardMenuModel> getAllMenu() {
+		return this.presentCardDao.getAllMenu();
+	}
+
+	/**DB에 저장된 모든 메뉴의 type을 return하는 Method
+	 * 
+	 * @return List<String> - list of menu types
+	 */
+	public List<String> getMenuType() {
+		return this.presentCardDao.getMenuType();
+	}
+
+	
+	
+	/*************** Self Methods ***************/
+
+	/**
+	 * 선물카드를 저장하는 Method
+	 * 
+	 * @param int index
+	 * @return int - 상황에 따른 error 코드
+	 * 
+	 */
+	private boolean saveGiftCard(PresentCardModel card) {
+
+		try {
+			BufferedImage backImage = ImageIO.read(new File(GlobalVariables.GIFTCARD_PATH_IN_SERV+"back.png"));
+			File bcdImage = saveGiftCardBarcode(card.getBarcodeNum());
+			
+			BufferedImage barcodeImage = ImageIO.read(bcdImage);
+
+			int width = backImage.getWidth();
+			int height = backImage.getHeight();
+			
+			int barcodeL = (width/2) - (barcodeImage.getWidth()/2);
+			int barcodeT = 420;
+
+			BufferedImage mergedImage = new BufferedImage(width, height,
+					BufferedImage.TYPE_INT_RGB);
+			Graphics2D graphics = (Graphics2D) mergedImage.getGraphics();
+			
+			RenderingHints rh = new RenderingHints(
+		             RenderingHints.KEY_TEXT_ANTIALIASING,
+		             RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+		    graphics.setRenderingHints(rh);
+
+			// dgraphics.setBackground(Color.WHITE);
+			graphics.drawImage(backImage, 0, 0, null);
+			graphics.drawImage(barcodeImage, barcodeL, barcodeT, null);
+
+			graphics.setColor(Color.black);
+			graphics.setFont(new Font("나눔고딕", Font.BOLD, 14));
+			graphics.drawString("("+card.getMenu()+")", 185, 75);
+			
+			graphics.setFont(new Font("나눔고딕", Font.PLAIN, 15));
+			graphics.drawString(card.getNick_name(), 90, 120);
+			String messages[] = card.getMessage().split("&lt;br&gt;");
+			int additionalRow = 0;
+			for(int i=0; i<messages.length; i++){
+				int overrow = messages[i].length() / 21;
+				
+				if(overrow == 0)
+					graphics.drawString(messages[i], 60, ((i+additionalRow)*31 + 163));
+				else{
+					int splitStart = 0;
+					int splitEnd = 20;
+					
+					//first row
+					graphics.drawString(messages[i].substring(splitStart,splitEnd), 60, ((i+additionalRow)*31 + 163));
+
+					for(int j=0; j<overrow-1; j++){
+						additionalRow++;
+						splitStart = splitEnd;
+						splitEnd += 20;
+						
+						graphics.drawString(messages[i].substring(splitStart, splitEnd), 60, ((i+additionalRow)*31 + 163));
+					}
+					//last row
+					additionalRow++;
+					graphics.drawString(messages[i].substring(splitEnd), 60, ((i+additionalRow)*31 + 163));	
+				}
+			}
+			graphics.drawString(card.getUser_name(), 295, 325);
+
+			graphics.setFont(new Font("나눔손글씨 펜", Font.PLAIN, 20));
+			String sumString = new String("\"소중한 당신께 "+card.getMenu()+"를 "+card.getEmail_address()+"잔 선물할게요.\"");
+			int strLen = sumString.length() * 13;
+			int lefPnt = (backImage.getWidth() / 2) - (strLen / 2) + 30;
+			graphics.drawString(sumString, lefPnt, 400);
+
+			ImageIO.write(mergedImage, "png", new File(
+					GlobalVariables.GIFTCARD_PATH_IN_SERV+card.getBarcodeNum()+".png"));
+			ImageIO.write(mergedImage, "png", new File(
+							GlobalVariables.GIFTCARD_BACKUP_PATH_IN_SERV+card.getBarcodeNum()+".png"));
+			ImageIO.write(mergedImage, "png", new File(
+					GlobalVariables.GIFTCARD_PATH_FOR_WEB+card.getBarcodeNum()+".png"));
+		} catch (IOException ioe) {
+			ioe.printStackTrace();
+		}
+
+		return true;
+	}
+
+	/**
+	 * 선물카드의 바코드 그림을 저장하는 method
+	 * 
+	 * @param String
+	 *            senderId
+	 * @return boolean
+	 * 
+	 */
+	private File saveGiftCardBarcode(String barcodeNum) {
+		String barcodeImgUrl = barcodeNum + ".png";
+		File file;
+		
+		try {
+			Barcode barcode = BarcodeFactory.createCode39(barcodeNum, true);
+			file = new File(GlobalVariables.GIFTCARD_BARCODE_PATH_IN_SERV
+					+ barcodeImgUrl);
+			File backupFile = new File(
+					GlobalVariables.GIFTCARD_BARCODE_BACKUP_PATH_IN_SERV
+							+ barcodeImgUrl);
+
+			BarcodeImageHandler.savePNG(barcode, file);
+			BarcodeImageHandler.savePNG(barcode, backupFile);
+		} catch (BarcodeException e) {
+			return null;
+		} catch (OutputException e) {
+			return null;
+		}
+
+		return file;
+	}
+
+	/**
+	 * 선물카드의 바코드 그림을 저장하는 method
+	 * 
+	 * @param String
+	 *            senderId
+	 * @return boolean
+	 * 
+	 */
+	private String makeProperBarcodeNum() {
+		Random rnd = new Random(System.currentTimeMillis());
+		char randAlpha1 = (char) (rnd.nextInt(26) + 65);
+		char randAlpha2 = (char) (rnd.nextInt(26) + 65);
+
+		DateFormat monthFormat = new SimpleDateFormat("MM");
+		DateFormat dayFormat = new SimpleDateFormat("dd");
+		DateFormat yearFormat = new SimpleDateFormat("yyyy");
+		Date curDate = new Date();
+
+		int yearVal = yearFormat.format(curDate).toString().charAt(1)
+				+ yearFormat.format(curDate).toString().charAt(2)
+				+ yearFormat.format(curDate).toString().charAt(3);
+		while ((yearVal >= 10)) {
+			yearVal = (yearVal / 10) + (yearVal % 10);
+		}
+
+		String bNum = "" + randAlpha1 + randAlpha2
+				+ monthFormat.format(curDate) + yearVal
+				+ dayFormat.format(curDate);
+
+		String minNum = bNum + "00000";
+		String maxNum = bNum + "99999";
+
+		String maxBarcodeNum = this.presentCardDao.getLatestBarcodeNum(minNum,
+				maxNum);
+
+		int idx = Integer.parseInt(maxBarcodeNum.substring(7, 10));
+		idx++;
+
+		String idxString = "000";
+		if (idx >= 100)
+			idxString = "" + idx;
+		else if (idx >= 10)
+			idxString = "0" + idx;
+		else
+			idxString = "00" + idx;
+
+		String rt = bNum + idxString;
+
+		int oPrt = (int) rt.charAt(0) + (int) rt.charAt(2) + (int) rt.charAt(4)
+				+ (int) rt.charAt(6) + (int) rt.charAt(8);
+		int ePrt = (int) rt.charAt(1) + (int) rt.charAt(3) + (int) rt.charAt(5)
+				+ (int) rt.charAt(7) + (int) rt.charAt(9);
+
+		bNum += bNum + (10 - (oPrt % 10)) + (10 - (ePrt % 10));
+
+		String rtString = rt + (9 - (oPrt % 10)) + (9 - (ePrt % 10));
+		System.out.println("gen Barcode num: " + rtString);
+
+		if (presentCardDao.checkDupBarcodeNum(rtString)) {
+			return makeProperBarcodeNum();
+		}
+
+		return rtString;
+	}
+}

@@ -1,0 +1,145 @@
+package ghost.android.hisbeans.coffeestamp;
+
+import ghost.android.hisbeans.GlobalVariables;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.ibatis.session.SqlSession;
+
+/**
+ * @author HyeonWook Kim
+ * @email khw0867@gmail.com
+ * @classname CoffeeStampDaoJdbc.java
+ * @package ghost.android.hisbeans.coffeestamp
+ * @date 2012. 7. 16.
+ * @purpose : implements CoffeeStampDao with mybatis
+ *
+ */
+public class CoffeeStampDaoJdbc implements CoffeeStampDao{
+	private SqlSession sqlSession;
+
+	public void setSqlSession(SqlSession sqlSession){
+		this.sqlSession = sqlSession;
+	}
+
+	
+	
+	/*************** DAO Methods ***************/
+
+	/**
+	 * 
+	 * @param barcodeNumber for identify specific user
+	 * @return every stampCards in database
+	 * 
+	 */
+	public List<CoffeeStampModel> getStampCards(String barcodeNum) {
+		List<CoffeeStampModel> stampCards = sqlSession.selectList("getStampCards", barcodeNum);
+
+		return stampCards;
+	}
+
+	
+	
+	/**
+	 * 
+	 * @param barcodeNumber for identify specific user
+	 * @return stampCard whose count is not full
+	 * 
+	 */
+	public CoffeeStampModel getCurrentStampCard(String barcodeNum) {
+		return sqlSession.selectOne("getCurrentStampCard", barcodeNum);
+	}
+	
+
+	/**
+	 * 
+	 * @param barcodeNumber for identify specific user
+	 * @return stampCard whose count is full but not used
+	 * 
+	 */
+	public CoffeeStampModel getFullNotusedStampCard(String barcodeNum) {
+		return sqlSession.selectOne("getFullNotusedStampCard", barcodeNum);
+	}
+	
+
+	
+	
+	/**
+	 * 
+	 * @param stampCardIndex for identify specific card
+	 * @param count of stamp to add
+	 * 
+	 */
+	public void addCoffeeStamps(int stampCardIndex, int count) throws IlligalStampAccessException {
+		if(Math.abs(count) > GlobalVariables.ADD_STAMP_LIMIT){
+			throw new IlligalStampAccessException();
+		}
+		
+		Map<String, Integer> param = new HashMap<String, Integer>();
+
+		param.put("index", stampCardIndex);
+		param.put("count", count);
+
+		sqlSession.update("addCoffeeStamp", param);
+	}
+
+	
+	
+	
+	/**
+	 * 
+	 * @param barcodeNumber for identify specific user
+	 * @return stampCard whose count is full and used flag is false
+	 * 
+	 */
+	public CoffeeStampModel getUseableStampCard(String barcodeNum) {
+		return sqlSession.selectOne("getUseableStampCard", barcodeNum);
+	}
+
+	
+	
+	/**
+	 * 
+	 * @param stampCardIndex for identify specific card
+	 * 
+	 */
+	public void updateUsedFlag(int stampCardIndex) {
+		sqlSession.update("updateUsedFlag", stampCardIndex);
+	}
+
+	
+	
+	/**
+	 * 
+	 * @param barcodeNumber for identify specific user
+	 * 
+	 */
+	public void addStampCard(String barcodeNum) {
+		sqlSession.insert("addStampCard", barcodeNum);
+	}
+	
+	
+	
+	/**
+	 * 
+	 * @param barcodeNumber for identify specific user
+	 * 
+	 */
+	public void removeStampCard(int index) {
+		sqlSession.insert("removeStampCard", index);
+	}
+	
+	
+	
+	/**
+	 * 
+	 * @param barcodeNumber for identify specific user
+	 * 
+	 */
+	public void deleteCoffeeStamp(String barcodeNum) {
+		sqlSession.delete("deleteCoffeeStamp", barcodeNum);
+	}
+
+}

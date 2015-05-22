@@ -1,0 +1,99 @@
+package ghost.android.hisbeans.coffeestamp;
+
+import java.util.List;
+
+import org.springframework.transaction.annotation.Transactional;
+
+/**
+ * @author HyeonWook Kim
+ * @email khw0867@gmail.com
+ * @classname CoffeeStampServiceImpl.java
+ * @package ghost.android.hisbeans.coffeestamp
+ * @date 2012. 7. 16.
+ * @purpose :  implements CoffeeStampService using CoffeeStampDao
+ *
+ */
+@Transactional(rollbackFor={NoUseableStampcardException.class})
+public class CoffeeStampServiceImpl implements CoffeeStampService{
+	private CoffeeStampDao coffeeStampDao;
+	
+	public void setCoffeeStampDao(CoffeeStampDao coffeeStampDao){
+		this.coffeeStampDao = coffeeStampDao;
+	}
+
+	
+	
+	/*************** Override Methods ***************/
+	
+	/**
+	 * 
+	 * @param barcodeNumber for identify specific user
+	 * @return every stampCards in database
+	 * 
+	 */
+	public List<CoffeeStampModel> getStampCards(String barcodeNum) {
+		return this.coffeeStampDao.getStampCards(barcodeNum);
+	}
+
+	
+	
+	/**
+	 * @param barcodeNumber for identify specific user
+	 * @param count of stamp to add
+	 * @return true if success to add a stamp
+	 * 
+	 */
+	public boolean addCoffeeStamps(String barcodeNum, int count) {
+		CoffeeStampModel currentCard = this.coffeeStampDao.getCurrentStampCard(barcodeNum);
+		
+		int maxNum = CoffeeStampModel.MAX_COUNT - currentCard.getCounts();
+
+		if(count >= maxNum){
+			this.coffeeStampDao.addCoffeeStamps(currentCard.getIndex(), maxNum);
+			
+			//if coffee stamp is full, add another stampcard
+			makeNewStampCard(barcodeNum);
+			
+			addCoffeeStamps(barcodeNum, count-maxNum);
+		} 
+		else{
+			this.coffeeStampDao.addCoffeeStamps(currentCard.getIndex(), count);
+		}
+
+		return true;
+	}
+
+	
+	
+	/**
+	 * 
+	 * @param barcodeNumber for identify specific user
+	 * @param count 
+	 * @return true if success to use a stamp-card
+	 * 
+	 */
+	public boolean useStampCard(String barcodeNum, int count) throws NoUseableStampcardException {
+		
+		for(int i=0; i<count; i++){
+			CoffeeStampModel useableCard = this.coffeeStampDao.getUseableStampCard(barcodeNum);
+			if(useableCard == null){
+				throw new NoUseableStampcardException();
+			}
+			
+			this.coffeeStampDao.updateUsedFlag(useableCard.getIndex());
+		}
+		return true;
+	}
+
+	
+	
+	/**
+	 * 
+	 * @param barcodeNumber for identify specific user
+	 * @return void
+	 * 
+	 */
+	public void makeNewStampCard(String barcodeNum) {
+		this.coffeeStampDao.addStampCard(barcodeNum);
+	}
+}

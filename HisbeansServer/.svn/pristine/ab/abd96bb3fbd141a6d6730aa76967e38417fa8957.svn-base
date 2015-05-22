@@ -1,0 +1,24 @@
+package ghost.android.hisbeans.setting;
+
+
+/**
+ * @author SeungMin
+ * @email rfrost77@gmail.com
+ * @classname SettingService.java
+ * @package ghost.android.hisbeans.setting
+ * @date 2012. 8. 7. 오후 5:55:30
+ * @purpose : 
+ *
+ * @comment : 
+ *
+ */
+
+public interface SettingService {
+	
+	/*** 구현 완료 ***/
+	
+	public String getVersion();
+	public String getIsShow();
+	public String getNotice();
+	public NoticesModel getNotices();
+}

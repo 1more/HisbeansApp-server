@@ -1,0 +1,338 @@
+package ghost.android.hisbeans.user;
+
+import ghost.android.hisbeans.GlobalVariables;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.ibatis.session.SqlSession;
+
+/**
+ * @author SeungMin
+ * @email rfrost77@gmail.com
+ * @classname UserDaoJdbc.java
+ * @package ghost.android.hisbeans.user
+ * @date 2012. 7. 17. 오후 4:03:59
+ * @purpose : UserDao를 Jdbc 기술에 기반하여 Mybatis mapper에 있는 Query를 시행.
+ * 				UserDao Interface를 implements하여 userDao로부터 사용된다.
+ *
+ * @comment : 
+ *
+ */
+public class UserDaoJdbc implements UserDao{
+	private SqlSession sqlSession;
+	
+	public void setSqlSession(SqlSession sqlSession){
+		this.sqlSession = sqlSession;
+	}
+	
+	
+	
+	/*************** DAO Methods ***************/
+	
+	/** DB에 User 정보를 add하는 Method
+	 * 
+	 * @param UserModel
+	 * @return void
+	 * 
+	 */
+	public void addUser(UserModel user) {
+		Map<String, UserModel> param = new HashMap<String, UserModel>();
+		param.put("user", user);
+		
+		int srl = user.getSrl();
+		sqlSession.insert("addUser", param);
+		sqlSession.insert("addSeq", srl);
+	}
+	
+	public int getMaxSeq(){
+		return sqlSession.selectOne("getMaxSeqNum");
+	}
+	
+	
+	public void addBarcode(UserBarcodeModel barcode){
+		Map<String, UserBarcodeModel> param = new HashMap<String, UserBarcodeModel>();
+		param.put("barcode", barcode);
+		
+		sqlSession.insert("addBarcode", param);
+	}
+
+	
+	
+	/** parameter로 주어진 id와 정보가 일치하는 db상의 user 정보를 불러오는 method
+	 * 
+	 * @param String id
+	 * @return UserModel
+	 * 
+	 */
+	public UserModel getUserById(String id) {
+		return sqlSession.selectOne("getUserById", id);
+	}
+	
+	
+	
+	/** parameter로 주어진 email과 정보가 일치하는 db상의 user 정보를 불러오는 method
+	 * 
+	 * @param String email
+	 * @return UserModel
+	 * 
+	 */
+	public UserModel getUserByEmail(String email) {
+		return sqlSession.selectOne("getUserByEmail", email);
+	}
+
+	
+	
+	/** parameter로 주어진 phoneNum와 정보가 일치하는 db상의 user 정보를 불러오는 method
+	 * 
+	 * @param String phoneNum
+	 * @return UserModel
+	 * 
+	 */
+	public UserModel getUserByPhoneNum(String phoneNum) {
+		return sqlSession.selectOne("getUserByPhoneNum", phoneNum);
+	}
+	
+	
+	/** parameter로 주어진 phoneNum와 정보가 일치하는 db상의 user 정보를 불러오는 method
+	 * 
+	 * @param String nickname
+	 * @return UserModel
+	 * 
+	 */
+	public String getUserByNickname(String nickname) {
+		return sqlSession.selectOne("getUserByNickname", nickname);
+	}	
+	
+	
+	/** parameter로 주어진 name, phoneNum와 정보가 일치하는 db상의 user 정보를 불러오는 method
+	 * 
+	 * @param String phoneNum
+	 * @return UserModel
+	 * 
+	 */
+	public UserModel getUserByNamePhoneNum(String name, String phoneNum) {
+		Map<String, String> param = new HashMap<String, String>();
+		param.put("name", name);
+		param.put("phoneNum", phoneNum);
+
+		return sqlSession.selectOne("getUserByNamePhoneNum", param);
+	}
+	
+	
+	
+	/** parameter로 주어진 id, name, phoneNum와 정보가 일치하는 db상의 user 정보를 불러오는 method
+	 * 
+	 * @param String phoneNum
+	 * @return UserModel
+	 * 
+	 */
+	public UserModel getUserByIdNamePhoneNum(String id, String name, String phoneNum) {
+		Map<String, String> param = new HashMap<String, String>();
+		param.put("id", id);
+		param.put("name", name);
+		param.put("phoneNum", phoneNum);
+
+		return sqlSession.selectOne("getUserByIdNamePhoneNum", param);
+	}
+	
+	
+	
+	/** parameter로 주어진 id와 password 정보가 일치하는 db상의 user 정보를 불러오는 method
+	 * 
+	 * @param String id, String password
+	 * @return UserModel
+	 * 
+	 */
+	public UserModel getUserByIdPassword(String id, String password) {
+		Map<String, String> param = new HashMap<String, String>();
+		param.put("id", id);
+		param.put("password", password);
+
+		return sqlSession.selectOne("getUserByIdPassword", param);
+	}
+
+	
+	
+	/** parameter로 주어진 name, email 정보가 일치하는 db상의 user 정보를 불러오는 method.
+	 * 
+	 * @param String name, String email
+	 * @return UserModel
+	 * 
+	 */
+	public UserModel getUserByNameEmail(String name, String email) {
+		Map<String, String> param = new HashMap<String, String>();
+		param.put("name", name);
+		param.put("email", email);
+
+		return sqlSession.selectOne("getUserByNameEmail", param);
+	}
+	
+	
+	
+	/** parameter로 주어진 id, name, email 정보가 일치하는 db상의 user 정보를 불러오는 method.
+	 * 
+	 * @param String id, String name, String email
+	 * @return UserModel
+	 * 
+	 */
+	public UserModel getUserByIdNameEmail(String id, String name, String email) {
+		Map<String, String> param = new HashMap<String, String>();
+		param.put("id", id);
+		param.put("name", name);
+		param.put("email", email);
+
+		return sqlSession.selectOne("getUserByIdNameEmail", param);
+	}
+	
+	
+	
+	/** DB에 있는 모든 User들의 정보를 불러오는 Method
+	 * 
+	 * @param None
+	 * @return List<UserModel>
+	 * 
+	 */
+	public List<UserModel> getAllUser() {
+		List<UserModel> users = sqlSession.selectList("getAllUser");
+		
+		return users;
+	}
+	
+	
+	
+	/** parameter로 주어진 id의 user 정보를 db에서 삭제하는 method
+	 * 
+	 * @param String id
+	 * @return void
+	 * 
+	 */
+	public void deleteUser(String id) {
+		sqlSession.delete("deleteUser", id);
+	}
+
+	
+	
+	/** parameter로 주어진 id userbarcode를 삭제한다
+	 * 
+	 * @param String id
+	 * @return void
+	 * 
+	 */
+	public void deleteUserBarcode(String id) {
+		sqlSession.delete("deleteUserBarcode", id);
+	}
+	
+	
+	
+	/** parameter로 주어진 user의 id에 해당하는 user 정보를 update해주는 Method
+	 * 
+	 * @param UserModel user
+	 * @return void
+	 * 
+	 */
+	public void updateUser(UserModel user) {
+		Map<String, UserModel> param = new HashMap<String, UserModel>();
+		param.put("user", user);
+		
+		sqlSession.update("updateUser", param);
+	}
+
+	
+	
+	public int countUser() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+	
+	/** db와 연계하여 중복되지 않은 proper barcodeNum을 생성하는 Method
+	 * 
+	 * @param none
+	 * @return String - properBarcodeNum
+	 * 
+	 */
+	public String getProperBarcodeNum(){
+		String curDate = sqlSession.selectOne("getCurrentDate");
+		String pNum = Character.toString(curDate.charAt(0)) + curDate.subSequence(2, 6) + "000";
+		String ret =  sqlSession.selectOne("getPropBarcodeNum", pNum);
+		if( ret == null ){
+			ret = pNum;
+		}
+		
+		return ret;
+	}
+
+	public UserBarcodeModel getUserBarcodeById(String id) {
+		return sqlSession.selectOne("getBarcodeNum", id);
+	}
+
+	/* Valid code를 랜덤으로 생성해서 id에 저장.
+	 * 저장된 validCode는 id/password 찾기 인증 시에 사용됨
+	 * 
+	 * @param id
+	 * 
+	 */
+	public String genValidCode(String id) {
+		String ret = sqlSession.selectOne("getValidCode", id);
+		if(ret != null){
+			return GlobalVariables.CODE_ALREADY_EXIST;
+		}
+		
+		String validCode = makeValidCode();
+		
+		Map<String, String> param = new HashMap<String, String>();
+		param.put("id", id);
+		param.put("validCode", validCode);
+		
+		sqlSession.insert("genValidCode", param);
+		
+		return validCode;
+	}
+	
+	public boolean rmvValidCode(String id){
+		String ret = sqlSession.selectOne("getValidCode", id);
+		
+		if(ret != null){
+			sqlSession.delete("rmvValidCode", id);
+			return true;
+		}
+		
+		return false;
+	}
+
+	public String getValidCode(String id) {
+		String ret = sqlSession.selectOne("getValidCode", id);
+		
+		return ret;
+	}
+
+	public String getProperName(String id) {
+		String ret = sqlSession.selectOne("getProperName", id);
+		return ret;
+	}
+
+	public String getProperNickname(String nickname) {
+		String ret = sqlSession.selectOne("getProperNickname", nickname);
+		return ret;
+	}
+
+	public int getProperMemberSrl(String id) {
+		int ret = sqlSession.selectOne("getProperMemberSrl", id);
+		return ret;
+	}
+
+	
+
+	/*************** Self Methods ***************/
+
+	/** 랜덤하게 5자리 숫자를 생성하는 메소드
+	 *  생성되는 값은 10000보다 크거나 같고, 99999보다 작거나 같다.
+	 * 
+	 * @return randomly generated number between 10000 and 99999
+	 */
+	public static String makeValidCode(){
+		Integer num = (int)(Math.random()*90000) + 10000;
+		return num.toString();
+	}
+}
